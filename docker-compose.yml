@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: hoh_db
+      POSTGRES_USER: hoh_user
+      POSTGRES_PASSWORD: hoh_password
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hoh_user -d hoh_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=your-secret-key-here
+      - DB_NAME=hoh_db
+      - DB_USER=hoh_user
+      - DB_PASSWORD=hoh_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      - BASE_URI=http://localhost:3000
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:

@@ -27,17 +27,105 @@ class NewsArticleSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+def process_single_api_call(api_url, params):
+    """
+    Helper function to process a single API call and return processed data.
+    """
+    # Make API request
+    response = requests.get(api_url, params=params, timeout=30)
+    response.raise_for_status()
+    
+    data = response.json()
+    
+    if data.get('status') != 'success':
+        raise Exception(f"API request failed: {data}")
+    
+    # Store API response metadata
+    api_response = NewsAPIResponse.objects.create(
+        status=data.get('status'),
+        total_results=data.get('totalResults', 0),
+        next_page=data.get('nextPage'),
+        query_params=params
+    )
+    
+    # Process and store articles
+    articles_created = 0
+    articles_updated = 0
+    articles_skipped = 0
+    
+    for article_data in data.get('results', []):
+        try:
+            # Skip articles with paid plan content
+            if (article_data.get('content') == 'ONLY AVAILABLE IN PAID PLANS' or
+                article_data.get('ai_summary') == 'ONLY AVAILABLE IN PAID PLANS'):
+                article_data['content'] = None
+            
+            # Parse publication date
+            pub_date_str = article_data.get('pubDate')
+            if pub_date_str:
+                pub_date = timezone.make_aware(datetime.strptime(pub_date_str, '%Y-%m-%d %H:%M:%S'))
+            else:
+                pub_date = timezone.now()
+            
+            # Create or update article
+            article, created = NewsArticle.objects.update_or_create(
+                article_id=article_data.get('article_id'),
+                defaults={
+                    'title': article_data.get('title', ''),
+                    'link': article_data.get('link', ''),
+                    'description': article_data.get('description'),
+                    'content': article_data.get('content'),
+                    'pub_date': pub_date,
+                    'pub_date_tz': article_data.get('pubDateTZ', 'UTC'),
+                    'image_url': article_data.get('image_url'),
+                    'video_url': article_data.get('video_url'),
+                    'source_id': article_data.get('source_id', ''),
+                    'source_name': article_data.get('source_name', ''),
+                    'source_priority': article_data.get('source_priority'),
+                    'source_url': article_data.get('source_url'),
+                    'source_icon': article_data.get('source_icon'),
+                    'language': article_data.get('language', 'english'),
+                    'country': article_data.get('country', []),
+                    'category': article_data.get('category', []),
+                    'keywords': article_data.get('keywords', []),
+                    'creator': article_data.get('creator', []),
+                    'duplicate': article_data.get('duplicate', False),
+                }
+            )
+            
+            if created:
+                articles_created += 1
+            else:
+                articles_updated += 1
+                
+        except Exception as e:
+            print(f"Error processing article {article_data.get('article_id')}: {str(e)}")
+            articles_skipped += 1
+            continue
+    
+    return {
+        'api_response_id': api_response.id,
+        'total_results': data.get('totalResults', 0),
+        'articles_processed': len(data.get('results', [])),
+        'articles_created': articles_created,
+        'articles_updated': articles_updated,
+        'articles_skipped': articles_skipped,
+        'query': params.get('q', '')
+    }
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def fetch_and_store_news(request):
     """
     Public endpoint: Fetch news from NewsData.io API and store in database. No authentication required.
+    Calls multiple APIs sequentially with different query parameters.
     """
     try:
         # API configuration
         # Try environment, then Django settings, then decouple config
-        api_url = os.environ.get("NEWS_API_URL") or getattr(settings, "NEWS_API_URL", None)
-        api_key = os.environ.get("NEWS_API_KEY") or getattr(settings, "NEWS_API_KEY", None)
+        api_url = os.environ.get("NEWS_API_URL", None)
+        api_key = os.environ.get("NEWS_API_KEY", None)
         
         # Fallback to decouple config if still missing (for .env support)
         if not api_url:
@@ -64,100 +152,88 @@ def fetch_and_store_news(request):
                 'message': 'Set NEWS_API_URL in your environment or .env file.'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        # Query parameters
-        params = {
-            'apikey': api_key,
-            'language': 'en',
-            'q': 'realestate or finance AND economy',
-            'country': 'in'
-        }
+        # Define all query parameter sets
+        query_params_list = [
+            {
+                'apikey': api_key,
+                'language': 'en',
+                'q': 'realestate',
+                'country': 'in'
+            },
+            {
+                'apikey': api_key,
+                'language': 'en',
+                'q': 'realestate AND finance',
+                'country': 'in'
+            },
+            {
+                'apikey': api_key,
+                'language': 'en',
+                'q': 'realestate AND economy',
+                'country': 'in'
+            },
+            {
+                'apikey': api_key,
+                'language': 'en',
+                'q': 'realestate AND stockmarket',
+                'country': 'in'
+            },
+            {
+                'apikey': api_key,
+                'language': 'en',
+                'q': 'realestate AND politics',
+                'country': 'in'
+            }
+        ]
         
-        # Make API request
-        response = requests.get(api_url, params=params, timeout=30)
-        response.raise_for_status()
+        # Process each API call sequentially
+        all_results = []
+        total_articles_created = 0
+        total_articles_updated = 0
+        total_articles_skipped = 0
+        total_results_count = 0
         
-        data = response.json()
-        
-        if data.get('status') != 'success':
-            return Response({
-                'error': 'API request failed',
-                'details': data
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Store API response metadata
-        api_response = NewsAPIResponse.objects.create(
-            status=data.get('status'),
-            total_results=data.get('totalResults', 0),
-            next_page=data.get('nextPage'),
-            query_params=params
-        )
-        
-        # Process and store articles
-        articles_created = 0
-        articles_updated = 0
-        articles_skipped = 0
-        
-        for article_data in data.get('results', []):
+        for i, params in enumerate(query_params_list, 1):
             try:
-                # Skip articles with paid plan content
-                if (article_data.get('content') == 'ONLY AVAILABLE IN PAID PLANS' or
-                    article_data.get('ai_summary') == 'ONLY AVAILABLE IN PAID PLANS'):
-                    article_data['content'] = None
+                print(f"Processing API call {i}/{len(query_params_list)} with query: {params['q']}")
                 
-                # Parse publication date
-                pub_date_str = article_data.get('pubDate')
-                if pub_date_str:
-                    pub_date = timezone.make_aware(datetime.strptime(pub_date_str, '%Y-%m-%d %H:%M:%S'))
-                else:
-                    pub_date = timezone.now()
+                # Process single API call
+                result = process_single_api_call(api_url, params)
+                all_results.append(result)
                 
-                # Create or update article
-                article, created = NewsArticle.objects.update_or_create(
-                    article_id=article_data.get('article_id'),
-                    defaults={
-                        'title': article_data.get('title', ''),
-                        'link': article_data.get('link', ''),
-                        'description': article_data.get('description'),
-                        'content': article_data.get('content'),
-                        'pub_date': pub_date,
-                        'pub_date_tz': article_data.get('pubDateTZ', 'UTC'),
-                        'image_url': article_data.get('image_url'),
-                        'video_url': article_data.get('video_url'),
-                        'source_id': article_data.get('source_id', ''),
-                        'source_name': article_data.get('source_name', ''),
-                        'source_priority': article_data.get('source_priority'),
-                        'source_url': article_data.get('source_url'),
-                        'source_icon': article_data.get('source_icon'),
-                        'language': article_data.get('language', 'english'),
-                        'country': article_data.get('country', []),
-                        'category': article_data.get('category', []),
-                        'keywords': article_data.get('keywords', []),
-                        'creator': article_data.get('creator', []),
-                        'duplicate': article_data.get('duplicate', False),
-                    }
-                )
+                # Accumulate totals
+                total_articles_created += result['articles_created']
+                total_articles_updated += result['articles_updated']
+                total_articles_skipped += result['articles_skipped']
+                total_results_count += result['total_results']
                 
-                if created:
-                    articles_created += 1
-                else:
-                    articles_updated += 1
-                    
+                print(f"Completed API call {i}: {result['articles_created']} created, {result['articles_updated']} updated, {result['articles_skipped']} skipped")
+                
             except Exception as e:
-                print(f"Error processing article {article_data.get('article_id')}: {str(e)}")
-                articles_skipped += 1
+                print(f"Error in API call {i} with query '{params['q']}': {str(e)}")
+                all_results.append({
+                    'query': params['q'],
+                    'error': str(e),
+                    'articles_created': 0,
+                    'articles_updated': 0,
+                    'articles_skipped': 0,
+                    'total_results': 0
+                })
                 continue
         
         return Response({
             'success': True,
-            'message': 'News data fetched and stored successfully',
-            'stats': {
-                'total_results': data.get('totalResults', 0),
-                'articles_processed': len(data.get('results', [])),
-                'articles_created': articles_created,
-                'articles_updated': articles_updated,
-                'articles_skipped': articles_skipped
+            'message': 'Sequential news data fetching completed',
+            'summary': {
+                'total_api_calls': len(query_params_list),
+                'successful_calls': len([r for r in all_results if 'error' not in r]),
+                'failed_calls': len([r for r in all_results if 'error' in r]),
+                'total_articles_created': total_articles_created,
+                'total_articles_updated': total_articles_updated,
+                'total_articles_skipped': total_articles_skipped,
+                'total_results_from_api': total_results_count
             },
-            'api_response_id': api_response.id
+            'detailed_results': all_results
         }, status=status.HTTP_200_OK)
         
     except requests.RequestException as e:
