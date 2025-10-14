@@ -29,7 +29,7 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 # Base URI for the application
-BASE_URI = config('BASE_URI', default='http://localhost:8000')
+BASE_URI = config('BASE_URI', default='http://localhost:3000')
 
 # Extract host from BASE_URI for ALLOWED_HOSTS
 parsed_uri = urlparse(BASE_URI)
@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'authentication',
     'news',
     'budget',
+    'chatapp',
 ]
 
 MIDDLEWARE = [

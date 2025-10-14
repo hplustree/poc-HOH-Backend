@@ -12,9 +12,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status, serializers
-from .models import NewsArticle, NewsAPIResponse
-
-
+from .models import NewsArticle, NewsAPIResponse, Alert
+from .serializers import AlertSerializer, AlertStatusUpdateSerializer
+from dotenv import load_dotenv
+load_dotenv()
 class NewsArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsArticle
@@ -124,8 +125,8 @@ def fetch_and_store_news(request):
     try:
         # API configuration
         # Try environment, then Django settings, then decouple config
-        api_url = os.environ.get("NEWS_API_URL", None)
-        api_key = os.environ.get("NEWS_API_KEY", None)
+        api_url = os.getenv("NEWS_API_URL", None)
+        api_key = os.getenv("NEWS_API_KEY", None)
         
         # Fallback to decouple config if still missing (for .env support)
         if not api_url:
@@ -328,5 +329,227 @@ def get_news_articles(request):
     except Exception as e:
         return Response({
             'error': 'Failed to retrieve articles',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ============================================================================
+# ALERT MANAGEMENT ENDPOINTS
+# ============================================================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_unsent_alerts(request):
+    """
+    Get all alerts where is_sent = false
+    """
+    try:
+        # Get all unsent alerts ordered by creation date
+        alerts = Alert.objects.filter(is_sent=False).order_by('-created_at')
+        
+        # Serialize data
+        serializer = AlertSerializer(alerts, many=True)
+        
+        return Response({
+            'success': True,
+            'count': len(serializer.data),
+            'alerts': serializer.data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'error': 'Failed to retrieve unsent alerts',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def get_and_mark_accepted_alerts(request):
+    """
+    Get alerts where is_sent = false and is_accept = true, 
+    then update corresponding budget items and mark alerts as sent
+    """
+    try:
+        from budget.models import ProjectCosts
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
+        # Get alerts that are accepted but not sent yet
+        alerts = Alert.objects.filter(is_sent=False, is_accept=True).order_by('-created_at')
+        
+        if not alerts.exists():
+            return Response({
+                'success': True,
+                'message': 'No accepted unsent alerts found',
+                'count': 0,
+                'updated_alerts_count': 0,
+                'updated_budget_items': 0,
+                'alerts': []
+            }, status=status.HTTP_200_OK)
+        
+        # Serialize the data before updating
+        serializer = AlertSerializer(alerts, many=True)
+        alerts_data = serializer.data
+        
+        updated_budget_items = 0
+        budget_update_errors = []
+        budget_update_details = []
+        
+        # Update corresponding budget items for each accepted alert
+        for alert in alerts:
+            try:
+                # Validate alert data before processing
+                if not alert.category_name or not alert.item:
+                    budget_update_errors.append(f'Alert #{alert.alert_id}: Missing category_name or item data')
+                    continue
+                
+                # Try multiple matching strategies for better accuracy
+                project_costs = None
+                
+                # Strategy 1: Exact match on category_name and item_description
+                project_costs = ProjectCosts.objects.filter(
+                    category_name__iexact=alert.category_name.strip(),
+                    item_description__iexact=alert.item.strip()
+                ).first()
+                
+                # Strategy 2: If no exact match, try partial matching
+                if not project_costs:
+                    project_costs = ProjectCosts.objects.filter(
+                        category_name__icontains=alert.category_name.strip(),
+                        item_description__icontains=alert.item.strip()
+                    ).first()
+                
+                # Strategy 3: Try matching just on item_description if category doesn't match
+                if not project_costs:
+                    project_costs = ProjectCosts.objects.filter(
+                        item_description__iexact=alert.item.strip()
+                    ).first()
+                
+                if project_costs:
+                    # Store original values for logging
+                    original_values = {
+                        'supplier_brand': project_costs.supplier_brand,
+                        'rate_per_unit': project_costs.rate_per_unit,
+                        'quantity': project_costs.quantity,
+                        'line_total': project_costs.line_total
+                    }
+                    
+                    # Set change tracking fields
+                    project_costs._changed_by = f'alert_system_{request.user.username}'
+                    project_costs._change_reason = f'Updated from accepted alert #{alert.alert_id}: {alert.decision[:100]}'
+                    
+                    # Update with new values from the alert (only if they exist and are different)
+                    changes_made = []
+                    
+                    if alert.new_supplier_brand and alert.new_supplier_brand != project_costs.supplier_brand:
+                        project_costs.supplier_brand = alert.new_supplier_brand
+                        changes_made.append(f'supplier_brand: {original_values["supplier_brand"]} → {alert.new_supplier_brand}')
+                    
+                    if alert.new_rate_per_unit and alert.new_rate_per_unit != project_costs.rate_per_unit:
+                        project_costs.rate_per_unit = alert.new_rate_per_unit
+                        changes_made.append(f'rate_per_unit: {original_values["rate_per_unit"]} → {alert.new_rate_per_unit}')
+                    
+                    if alert.quantity and alert.quantity != project_costs.quantity:
+                        project_costs.quantity = alert.quantity
+                        changes_made.append(f'quantity: {original_values["quantity"]} → {alert.quantity}')
+                    
+                    # Only save if there are actual changes
+                    if changes_made:
+                        # Save will automatically calculate line_total and handle versioning
+                        project_costs.save()
+                        updated_budget_items += 1
+                        
+                        budget_update_details.append({
+                            'alert_id': alert.alert_id,
+                            'project_cost_id': project_costs.id,
+                            'changes': changes_made,
+                            'new_line_total': project_costs.line_total
+                        })
+                        
+                        logger.info(f'Updated ProjectCost ID {project_costs.id} from Alert #{alert.alert_id}: {", ".join(changes_made)}')
+                    else:
+                        budget_update_errors.append(f'Alert #{alert.alert_id}: No changes needed - values already match')
+                        
+                else:
+                    error_msg = f'Alert #{alert.alert_id}: No matching budget item found for category "{alert.category_name}" and item "{alert.item}"'
+                    budget_update_errors.append(error_msg)
+                    logger.warning(error_msg)
+                    
+            except Exception as e:
+                error_msg = f'Alert #{alert.alert_id}: Error updating budget item - {str(e)}'
+                budget_update_errors.append(error_msg)
+                logger.error(error_msg)
+        
+        # Update all these alerts to mark them as sent
+        updated_alerts_count = alerts.update(is_sent=True)
+        
+        response_data = {
+            'success': True,
+            'message': f'Retrieved and marked {updated_alerts_count} accepted alerts as sent, updated {updated_budget_items} budget items',
+            'count': len(alerts_data),
+            'updated_alerts_count': updated_alerts_count,
+            'updated_budget_items': updated_budget_items,
+            'alerts': alerts_data,
+            'budget_update_details': budget_update_details
+        }
+        
+        if budget_update_errors:
+            response_data['budget_update_warnings'] = budget_update_errors
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'error': 'Failed to retrieve and update accepted alerts',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_alert_status(request, alert_id):
+    """
+    Update the is_accept status of a specific alert
+    
+    Expected payload:
+    {
+        "is_accept": true/false
+    }
+    """
+    try:
+        alert = Alert.objects.get(alert_id=alert_id)
+        
+        # Validate the request data
+        serializer = AlertStatusUpdateSerializer(alert, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            updated_alert = serializer.save()
+            
+            # Return updated alert data
+            response_serializer = AlertSerializer(updated_alert)
+            
+            return Response({
+                'success': True,
+                'message': f'Alert {alert_id} status updated successfully',
+                'alert': response_serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        else:
+            return Response({
+                'error': 'Invalid data',
+                'details': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Alert.DoesNotExist:
+        return Response({
+            'error': 'Alert not found',
+            'message': f'Alert with ID {alert_id} does not exist'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    except Exception as e:
+        return Response({
+            'error': 'Failed to update alert status',
             'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

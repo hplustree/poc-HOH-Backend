@@ -1,0 +1,1071 @@
+Starting daily news processing at 2025-10-13 11:47:01.628770+00:00
+Configured cron schedule: 0 3 * * *
+Fetching news from localhost:3000...
+News fetch successful. Status: 200
+Response: {"success":true,"message":"Sequential news data fetching completed","summary":{"total_api_calls":5,"successful_calls":5,"failed_calls":0,"total_articles_created":0,"total_articles_updated":2,"total_ar...
+Retrieving top 10 latest news from database...
+Retrieved 10 news articles
+Sending news to decision API...
+Decision API call successful. Status: 200
+=== DECISION API RESPONSE ===
+{
+  "response": "NO decision changes required - news does not impact project costing"
+}
+=== END RESPONSE ===
+Daily news processing completed successfully!
+Starting daily news processing at 2025-10-13 12:20:01.906103+00:00
+Configured cron schedule: None
+Fetching news from endpoint...
+Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
+Starting daily news processing at 2025-10-13 12:23:02.258070+00:00
+Configured cron schedule: None
+Fetching news from endpoint...
+Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
+Starting daily news processing at 2025-10-13 12:25:01.584305+00:00
+Configured cron schedule: None
+Fetching news from endpoint...
+Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
+2025-10-13 12:50:06,198 - INFO - News fetch API call successful - Status: 200
+2025-10-13 12:50:06,211 - INFO - Retrieved 20 articles from database
+2025-10-13 12:50:13,185 - INFO - Decision API response: {
+  "response": "NO decision changes required - news does not impact project costing"
+}
+2025-10-13 12:50:13,185 - INFO - Decision API call successful - Status: 200
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+🚀 Starting daily news processing at 2025-10-13 12:50:02.019598+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 0,
+    "total_articles_updated": 2,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 2
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 44,
+      "total_results": 1,
+      "articles_processed": 1,
+      "articles_created": 0,
+      "articles_updated": 1,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
+  1. Debt capital desks may leak as banks start M&A financing...
+  2. ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives...
+  3. Vets to boycott Pb’s milk-yield competitions starting today...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
+
+============================================================
+📋 DECISION API RESPONSE LOG
+============================================================
+{
+  "response": "NO decision changes required - news does not impact project costing"
+}
+============================================================
+📋 END DECISION API RESPONSE LOG
+============================================================
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 11.17 seconds
+
+============================================================
+              DAILY NEWS PROCESSING COMPLETED               
+============================================================
+2025-10-13 13:08:01,592 - ERROR - Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+2025-10-13 13:08:01,592 - ERROR - Daily news processing failed: unsupported operand type(s) for +: 'NoneType' and 'str'
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 42, in handle
+    self.fetch_news_from_endpoint()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 91, in fetch_news_from_endpoint
+    url = os.environ.get('BASE_URI') + '/api/news/fetch/'
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'str'
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+🚀 Starting daily news processing at 2025-10-13 13:08:01.592080+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+❌ Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+❌ Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+2025-10-13 13:10:01,931 - ERROR - Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+2025-10-13 13:10:01,931 - ERROR - Daily news processing failed: unsupported operand type(s) for +: 'NoneType' and 'str'
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 42, in handle
+    self.fetch_news_from_endpoint()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 91, in fetch_news_from_endpoint
+    url = os.environ.get('BASE_URI') + '/api/news/fetch/'
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'str'
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+🚀 Starting daily news processing at 2025-10-13 13:10:01.930986+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+❌ Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+❌ Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+2025-10-13 13:11:02,309 - ERROR - Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+2025-10-13 13:11:02,310 - ERROR - Daily news processing failed: unsupported operand type(s) for +: 'NoneType' and 'str'
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 42, in handle
+    self.fetch_news_from_endpoint()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 91, in fetch_news_from_endpoint
+    url = os.environ.get('BASE_URI') + '/api/news/fetch/'
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'str'
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+🚀 Starting daily news processing at 2025-10-13 13:11:02.309934+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+❌ Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+❌ Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+2025-10-13 13:12:05,623 - INFO - News fetch API call successful - Status: 200
+2025-10-13 13:12:05,636 - INFO - Retrieved 20 articles from database
+2025-10-13 13:12:07,902 - INFO - Decision API call successful - Status: 200
+2025-10-13 13:12:07,902 - INFO - Decision API response headers: {'date': 'Mon, 13 Oct 2025 13:12:05 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
+2025-10-13 13:12:07,902 - INFO - Decision API response time: 2.27s
+2025-10-13 13:12:07,902 - INFO - Decision API response body: {
+  "response": "NO decision changes required - news does not impact project costing"
+}
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+🚀 Starting daily news processing at 2025-10-13 13:12:01.667711+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 0,
+    "total_articles_updated": 2,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 2
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 49,
+      "total_results": 1,
+      "articles_processed": 1,
+      "articles_created": 0,
+      "articles_updated": 1,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
+  1. Debt capital desks may leak as banks start M&A financing...
+  2. ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives...
+  3. Vets to boycott Pb’s milk-yield competitions starting today...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
+
+============================================================
+📋 DECISION API RESPONSE LOG
+============================================================
+📋 Response Headers: {'date': 'Mon, 13 Oct 2025 13:12:05 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 2.27 seconds
+------------------------------------------------------------
+📄 Response Body (JSON):
+{
+  "response": "NO decision changes required - news does not impact project costing"
+}
+============================================================
+📋 END DECISION API RESPONSE LOG
+============================================================
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 6.23 seconds
+
+============================================================
+              DAILY NEWS PROCESSING COMPLETED               
+============================================================
+2025-10-13 13:24:06,484 - INFO - News fetch API call successful - Status: 200
+2025-10-13 13:24:06,496 - INFO - Retrieved 20 articles from database
+2025-10-13 13:24:08,665 - INFO - Decision API call successful - Status: 200
+2025-10-13 13:24:08,665 - INFO - Decision API response headers: {'date': 'Mon, 13 Oct 2025 13:24:06 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
+2025-10-13 13:24:08,665 - INFO - Decision API response time: 2.17s
+2025-10-13 13:24:08,665 - INFO - Decision API response body: {
+  "response": "NO decision changes required - news does not impact project costing"
+}
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+🚀 Starting daily news processing at 2025-10-13 13:24:02.268896+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 0,
+    "total_articles_updated": 2,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 2
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 54,
+      "total_results": 1,
+      "articles_processed": 1,
+      "articles_created": 0,
+      "articles_updated": 1,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>, <NewsArticle: Nearly half of college seats vacant despite extended admission rounds>, <NewsArticle: Over 1.2K students shortlisted at Delhi University’s Job Mela>, <NewsArticle: ‘Made-in-India’ 4G stack is export ready, 1GB data costs less than a cup of tea today': PM Modi>, <NewsArticle: Gemini Daily Horoscope Today, October 9, 2025: Mercury wants you to ask the question everyone avoids>, <NewsArticle: October 09, 2025, Birthday Forecast: Discover what the next 12 months hold for you>, <NewsArticle: Bombay HC Reserves Order On Plea Against WeWork India IPO>, <NewsArticle: Numerology horoscope today, October 09, 2025: What your name's first letter reveals today>]>
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
+  1. Debt capital desks may leak as banks start M&A financing...
+  2. ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives...
+  3. Vets to boycott Pb’s milk-yield competitions starting today...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
+
+============================================================
+📋 DECISION API RESPONSE LOG
+============================================================
+📋 Response Headers: {'date': 'Mon, 13 Oct 2025 13:24:06 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 2.17 seconds
+------------------------------------------------------------
+📄 Response Body (JSON):
+{
+  "response": "NO decision changes required - news does not impact project costing"
+}
+============================================================
+📋 END DECISION API RESPONSE LOG
+============================================================
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 6.40 seconds
+
+============================================================
+              DAILY NEWS PROCESSING COMPLETED               
+============================================================
+2025-10-13 13:36:06,181 - INFO - News fetch API call successful - Status: 200
+2025-10-13 13:36:06,223 - INFO - Retrieved 20 articles from database
+2025-10-13 13:36:36,285 - INFO - Decision API call successful - Status: 200
+2025-10-13 13:36:36,285 - INFO - Decision API response headers: {'date': 'Mon, 13 Oct 2025 13:36:05 GMT', 'server': 'uvicorn', 'content-length': '1261', 'content-type': 'application/json'}
+2025-10-13 13:36:36,286 - INFO - Decision API response time: 30.06s
+2025-10-13 13:36:36,286 - INFO - Decision API response body: {
+  "response": {
+    "1": {
+      "decision": "Renegotiate Ultratech Cement Rates for Foundation Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Ultratech cement price dropped by 10% in major cities.' This creates a direct cost-saving opportunity because the reduction in cement prices will lower the overall cost of the foundation work. The potential impact includes a cost reduction of \u20b9800,000.",
+      "suggestion": "Immediately contact Ultratech Cement to lock in the new rates for the foundation work. Review the project budget to reflect the new pricing by the end of the week to ensure cost savings are captured. Monitor any further announcements from Ultratech regarding pricing changes. Expected outcome: Cost savings of \u20b9800,000 on foundation works.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Price reduction due to 10% drop in Ultratech cement prices"
+      }
+    }
+  }
+}
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+🚀 Starting daily news processing at 2025-10-13 13:36:02.085865+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 0,
+    "total_articles_updated": 2,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 2
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 59,
+      "total_results": 1,
+      "articles_processed": 1,
+      "articles_created": 0,
+      "articles_updated": 1,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>, <NewsArticle: Nearly half of college seats vacant despite extended admission rounds>, <NewsArticle: Over 1.2K students shortlisted at Delhi University’s Job Mela>, <NewsArticle: ‘Made-in-India’ 4G stack is export ready, 1GB data costs less than a cup of tea today': PM Modi>, <NewsArticle: Gemini Daily Horoscope Today, October 9, 2025: Mercury wants you to ask the question everyone avoids>, <NewsArticle: October 09, 2025, Birthday Forecast: Discover what the next 12 months hold for you>, <NewsArticle: Bombay HC Reserves Order On Plea Against WeWork India IPO>]>
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
+  1. Cement Prices Drop Significantly...
+  2. Debt capital desks may leak as banks start M&A financing...
+  3. ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
+
+============================================================
+📋 DECISION API RESPONSE LOG
+============================================================
+📋 Response Headers: {'date': 'Mon, 13 Oct 2025 13:36:05 GMT', 'server': 'uvicorn', 'content-length': '1261', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 30.06 seconds
+------------------------------------------------------------
+📄 Response Body (JSON):
+{
+  "response": {
+    "1": {
+      "decision": "Renegotiate Ultratech Cement Rates for Foundation Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Ultratech cement price dropped by 10% in major cities.' This creates a direct cost-saving opportunity because the reduction in cement prices will lower the overall cost of the foundation work. The potential impact includes a cost reduction of \u20b9800,000.",
+      "suggestion": "Immediately contact Ultratech Cement to lock in the new rates for the foundation work. Review the project budget to reflect the new pricing by the end of the week to ensure cost savings are captured. Monitor any further announcements from Ultratech regarding pricing changes. Expected outcome: Cost savings of \u20b9800,000 on foundation works.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Price reduction due to 10% drop in Ultratech cement prices"
+      }
+    }
+  }
+}
+============================================================
+📋 END DECISION API RESPONSE LOG
+============================================================
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 34.20 seconds
+
+============================================================
+              DAILY NEWS PROCESSING COMPLETED               
+============================================================
+2025-10-14 05:53:06,135 - INFO - News fetch API call successful - Status: 200
+2025-10-14 05:53:06,148 - INFO - Retrieved 20 articles from database
+2025-10-14 05:53:33,356 - INFO - Decision API call successful - Status: 200
+2025-10-14 05:53:33,356 - INFO - Decision API response headers: {'date': 'Tue, 14 Oct 2025 05:53:05 GMT', 'server': 'uvicorn', 'content-length': '1271', 'content-type': 'application/json'}
+2025-10-14 05:53:33,356 - INFO - Decision API response time: 27.21s
+2025-10-14 05:53:33,356 - INFO - Decision API response body: {
+  "response": {
+    "1": {
+      "decision": "Renegotiate Ultratech Cement Rates for Foundation Works Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Cement Prices Drop Significantly - Ultratech cement price dropped by 10% in major cities.' This creates a direct cost-saving opportunity because the reduction in cement prices can lower the overall project cost. The potential impact includes a cost reduction of \u20b9800,000 based on the current pricing.",
+      "suggestion": "Immediately contact Ultratech Cement to renegotiate rates based on the recent price drop. Secure a revised quote by the end of the week to capitalize on the savings. Monitor market conditions for any further price adjustments. Expected outcome: Cost savings of \u20b9800,000 on foundation works.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Confirmed price reduction - 10% drop in Ultratech Cement prices"
+      }
+    }
+  }
+}
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-10-14 05:53:02.111396+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 6,
+    "total_articles_updated": 0,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 6
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 64,
+      "total_results": 6,
+      "articles_processed": 6,
+      "articles_created": 6,
+      "articles_updated": 0,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>]>
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
+  1. Livspace’s FY25 Loss Declines 43% To INR 243 Cr...
+  2. IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25...
+  3. From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
+
+============================================================
+📋 DECISION API RESPONSE LOG
+============================================================
+📋 Response Headers: {'date': 'Tue, 14 Oct 2025 05:53:05 GMT', 'server': 'uvicorn', 'content-length': '1271', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 27.21 seconds
+------------------------------------------------------------
+📄 Response Body (JSON):
+{
+  "response": {
+    "1": {
+      "decision": "Renegotiate Ultratech Cement Rates for Foundation Works Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Cement Prices Drop Significantly - Ultratech cement price dropped by 10% in major cities.' This creates a direct cost-saving opportunity because the reduction in cement prices can lower the overall project cost. The potential impact includes a cost reduction of \u20b9800,000 based on the current pricing.",
+      "suggestion": "Immediately contact Ultratech Cement to renegotiate rates based on the recent price drop. Secure a revised quote by the end of the week to capitalize on the savings. Monitor market conditions for any further price adjustments. Expected outcome: Cost savings of \u20b9800,000 on foundation works.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Confirmed price reduction - 10% drop in Ultratech Cement prices"
+      }
+    }
+  }
+}
+============================================================
+📋 END DECISION API RESPONSE LOG
+============================================================
+
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 31.25 seconds
+
+============================================================
+              DAILY NEWS PROCESSING COMPLETED               
+============================================================
+
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-10-14 05:57:01.767728+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+2025-10-14 05:57:05,775 - INFO - News fetch API call successful - Status: 200
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 0,
+    "total_articles_updated": 6,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 6
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 69,
+      "total_results": 6,
+      "articles_processed": 6,
+      "articles_created": 0,
+      "articles_updated": 6,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+2025-10-14 05:57:05,786 - INFO - Retrieved 20 articles from database
+<QuerySet [<NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>]>
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
+  1. Livspace’s FY25 Loss Declines 43% To INR 243 Cr...
+  2. IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25...
+  3. From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+⏳ Waiting for response from decision API...
+2025-10-14 05:57:28,805 - ERROR - Failed to send news to decision API: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
+2025-10-14 05:57:28,805 - ERROR - Daily news processing failed: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 55, in handle
+    self.send_to_decision_api(latest_news)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 209, in send_to_decision_api
+    response.raise_for_status()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
+❌ Failed to send news to decision API: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
+❌ Error in daily news processing: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-10-14 05:59:02.161213+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+2025-10-14 05:59:05,991 - INFO - News fetch API call successful - Status: 200
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 0,
+    "total_articles_updated": 6,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 6
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 74,
+      "total_results": 6,
+      "articles_processed": 6,
+      "articles_created": 0,
+      "articles_updated": 6,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+2025-10-14 05:59:06,005 - INFO - Retrieved 20 articles from database
+<QuerySet [<NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>]>
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
+  1. Livspace’s FY25 Loss Declines 43% To INR 243 Cr...
+  2. IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25...
+  3. From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+⏳ Waiting for response from decision API...
+✅ Decision API call successful!
+📊 Status Code: 200
+⏱️  Response Time: 22.72 seconds
+
+============================================================
+📋 DECISION API RESPONSE LOG
+============================================================
+📋 Response Headers: {'date': 'Tue, 14 Oct 2025 05:59:05 GMT', 'server': 'uvicorn', 'content-length': '1325', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 22.72 seconds
+------------------------------------------------------------
+📄 Response Body (JSON):
+{
+  "response": {
+    "1": {
+      "decision": "Renegotiate Ultratech Cement Rates for Foundation Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Ultratech cement price dropped by 10% in major cities.' This creates a cost-saving opportunity because the reduction in cement prices can lower the overall expenses for the foundation work. The potential impact includes a savings of \u20b9800,000 if the price reduction is applied.",
+      "suggestion": "Immediately contact Ultratech Cement to confirm the new pricing and renegotiate the rates for the foundation work. Lock in the new rates by the end of this week to ensure cost savings. Monitor the cement market for any further price changes weekly. Prepare to adjust the project budget to reflect the new cost structure. Expected outcome: Cost savings of \u20b9800,000 on foundation works.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Price reduction - 10% drop in Ultratech Cement prices"
+      }
+    }
+  }
+}
+2025-10-14 05:59:28,728 - INFO - Decision API call successful - Status: 200
+2025-10-14 05:59:28,728 - INFO - Decision API response headers: {'date': 'Tue, 14 Oct 2025 05:59:05 GMT', 'server': 'uvicorn', 'content-length': '1325', 'content-type': 'application/json'}
+2025-10-14 05:59:28,728 - INFO - Decision API response time: 22.72s
+2025-10-14 05:59:28,728 - INFO - Decision API response body: {
+  "response": {
+    "1": {
+      "decision": "Renegotiate Ultratech Cement Rates for Foundation Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Ultratech cement price dropped by 10% in major cities.' This creates a cost-saving opportunity because the reduction in cement prices can lower the overall expenses for the foundation work. The potential impact includes a savings of \u20b9800,000 if the price reduction is applied.",
+      "suggestion": "Immediately contact Ultratech Cement to confirm the new pricing and renegotiate the rates for the foundation work. Lock in the new rates by the end of this week to ensure cost savings. Monitor the cement market for any further price changes weekly. Prepare to adjust the project budget to reflect the new cost structure. Expected outcome: Cost savings of \u20b9800,000 on foundation works.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Price reduction - 10% drop in Ultratech Cement prices"
+      }
+    }
+  }
+}
+============================================================
+📋 END DECISION API RESPONSE LOG
+============================================================
+
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 26.57 seconds
+
+============================================================
+              DAILY NEWS PROCESSING COMPLETED               
+============================================================
+
+2025-10-14 06:24:06,177 - INFO - News fetch API call successful - Status: 200
+2025-10-14 06:24:06,195 - INFO - Retrieved 20 articles from database
+2025-10-14 06:24:25,507 - INFO - Saved 1 alerts to database
+2025-10-14 06:24:25,507 - INFO - Decision API call successful - Status: 200
+2025-10-14 06:24:25,507 - INFO - Decision API response headers: {'date': 'Tue, 14 Oct 2025 06:24:05 GMT', 'server': 'uvicorn', 'content-length': '1221', 'content-type': 'application/json'}
+2025-10-14 06:24:25,507 - INFO - Decision API response time: 19.29s
+2025-10-14 06:24:25,507 - INFO - Decision API response body: {
+  "response": {
+    "1": {
+      "decision": "Renegotiate Ultratech Cement Rates for Foundation Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Ultratech cement price dropped by 10% in major cities.' This creates a cost-saving opportunity because securing the new lower rate can reduce overall project expenses. The potential impact includes a savings of \u20b9800,000 if the new rate is applied.",
+      "suggestion": "Immediately contact Ultratech Cement to renegotiate the rates based on the recent price drop. Secure a commitment for the new pricing by the end of the week to ensure cost savings. Monitor the cement market for any further price changes weekly. Expected outcome: Cost reduction of \u20b9800,000 for the foundation work.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Confirmed price drop of 10% for Ultratech Cement"
+      }
+    }
+  }
+}
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-10-14 06:24:02.157952+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 0,
+    "total_articles_updated": 6,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 6
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 79,
+      "total_results": 6,
+      "articles_processed": 6,
+      "articles_created": 0,
+      "articles_updated": 6,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>]>
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
+  1. Livspace’s FY25 Loss Declines 43% To INR 243 Cr...
+  2. IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25...
+  3. From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
+
+============================================================
+📋 DECISION API RESPONSE LOG
+============================================================
+📋 Response Headers: {'date': 'Tue, 14 Oct 2025 06:24:05 GMT', 'server': 'uvicorn', 'content-length': '1221', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 19.29 seconds
+------------------------------------------------------------
+📄 Response Body (JSON):
+{
+  "response": {
+    "1": {
+      "decision": "Renegotiate Ultratech Cement Rates for Foundation Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Ultratech cement price dropped by 10% in major cities.' This creates a cost-saving opportunity because securing the new lower rate can reduce overall project expenses. The potential impact includes a savings of \u20b9800,000 if the new rate is applied.",
+      "suggestion": "Immediately contact Ultratech Cement to renegotiate the rates based on the recent price drop. Secure a commitment for the new pricing by the end of the week to ensure cost savings. Monitor the cement market for any further price changes weekly. Expected outcome: Cost reduction of \u20b9800,000 for the foundation work.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Confirmed price drop of 10% for Ultratech Cement"
+      }
+    }
+  }
+}
+💾 Saving alerts to database...
+✅ Saved alert 1: Renegotiate Ultratech Cement Rates for Foundation ...
+💾 Successfully saved 1 alerts to database
+============================================================
+📋 END DECISION API RESPONSE LOG
+============================================================
+
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 23.35 seconds
+
+============================================================
+              DAILY NEWS PROCESSING COMPLETED               
+============================================================
+
+2025-10-14 07:19:06,283 - INFO - News fetch API call successful - Status: 200
+2025-10-14 07:19:06,298 - INFO - Retrieved 20 articles from database
+2025-10-14 07:19:29,733 - INFO - Saved 1 alerts to database
+2025-10-14 07:19:29,734 - INFO - Decision API call successful - Status: 200
+2025-10-14 07:19:29,734 - INFO - Decision API response headers: {'date': 'Tue, 14 Oct 2025 07:19:05 GMT', 'server': 'uvicorn', 'content-length': '1235', 'content-type': 'application/json'}
+2025-10-14 07:19:29,734 - INFO - Decision API response time: 23.42s
+2025-10-14 07:19:29,734 - INFO - Decision API response body: {
+  "response": {
+    "1": {
+      "decision": "Update Ultratech Cement Rates for Foundation Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Ultratech cement price dropped by 10% in major cities.' This creates a cost-saving opportunity because the reduction in cement prices will lower the overall project cost for the foundation work. The potential impact includes a cost reduction of \u20b9800,000.",
+      "suggestion": "Immediately renegotiate the rates with Ultratech Cement to lock in the new price. Update the project budget to reflect the reduced costs within 5 days to ensure accurate financial planning. Monitor the cement market for any further price changes weekly. Expected outcome: Cost savings of \u20b9800,000 for the foundation work.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Price reduction - 10% drop in Ultratech Cement prices"
+      }
+    }
+  }
+}
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-10-14 07:19:01.902223+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 0,
+    "total_articles_updated": 6,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 6
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 84,
+      "total_results": 6,
+      "articles_processed": 6,
+      "articles_created": 0,
+      "articles_updated": 6,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>]>
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
+  1. Livspace’s FY25 Loss Declines 43% To INR 243 Cr...
+  2. IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25...
+  3. From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
+
+============================================================
+📋 DECISION API RESPONSE LOG
+============================================================
+📋 Response Headers: {'date': 'Tue, 14 Oct 2025 07:19:05 GMT', 'server': 'uvicorn', 'content-length': '1235', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 23.42 seconds
+------------------------------------------------------------
+📄 Response Body (JSON):
+{
+  "response": {
+    "1": {
+      "decision": "Update Ultratech Cement Rates for Foundation Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Ultratech cement price dropped by 10% in major cities.' This creates a cost-saving opportunity because the reduction in cement prices will lower the overall project cost for the foundation work. The potential impact includes a cost reduction of \u20b9800,000.",
+      "suggestion": "Immediately renegotiate the rates with Ultratech Cement to lock in the new price. Update the project budget to reflect the reduced costs within 5 days to ensure accurate financial planning. Monitor the cement market for any further price changes weekly. Expected outcome: Cost savings of \u20b9800,000 for the foundation work.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Price reduction - 10% drop in Ultratech Cement prices"
+      }
+    }
+  }
+}
+💾 Saving alerts to database...
+✅ Saved alert 2: Update Ultratech Cement Rates for Foundation Due t...
+💾 Successfully saved 1 alerts to database
+============================================================
+📋 END DECISION API RESPONSE LOG
+============================================================
+
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 27.83 seconds
+
+============================================================
+              DAILY NEWS PROCESSING COMPLETED               
+============================================================
+
