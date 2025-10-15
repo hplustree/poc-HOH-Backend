@@ -2,7 +2,9 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import generics
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from .models import Session, Conversation, Messages, UpdatedCost
 from .serializers import (
     SessionSerializer, ConversationSerializer, MessageSerializer, 
@@ -61,7 +63,7 @@ def create_session(request):
 @permission_classes([IsAuthenticated])
 def send_message(request):
     """
-    Handle user message: save to DB and send to external API
+    Handle user message: save to DB first, then call external chatbot API with complete payload
     """
     try:
         serializer = MessageCreateSerializer(data=request.data)
@@ -100,7 +102,7 @@ def send_message(request):
                 conversation = Conversation.objects.create(session=session)
                 conversation_id = conversation.conversation_id
             
-            # Save user message to database
+            # STEP 1: Save user message to database FIRST
             user_message = save_message_to_db(
                 conversation_id=conversation_id,
                 sender_id=user_detail.id if user_detail else None,
@@ -108,14 +110,15 @@ def send_message(request):
                 content=content
             )
             
-            # Build payload for external API
+            # STEP 2: Build complete payload for external API
+            # This includes: latest project costing, last 10 chats, accepted decisions
             api_payload = build_api_payload(
                 question=content,
                 session_id=session_id,
                 conversation_id=conversation_id
             )
             
-            # Send to external chatbot API
+            # STEP 3: Send to external chatbot API
             api_response = send_to_external_api(api_payload)
             
             response_data = {
@@ -127,15 +130,15 @@ def send_message(request):
                 'external_api_response': api_response
             }
             
-            # If external API was successful, save AI response and costing data
+            # STEP 4: Process API response and save chatbot answer
             if api_response.get('success') and 'data' in api_response:
                 chatbot_response = api_response['data']
                 
-                # Extract answer and costing from chatbot response
-                ai_answer = chatbot_response.get('answer', 'No response from chatbot')
-                costing_data = chatbot_response.get('costing', {})
+                # Extract answer from chatbot response
+                ai_answer = chatbot_response.get('answer', 'I apologize, but that information is not available in this project documentation. I can only assist with questions related to this construction project.')
+                costing_data = chatbot_response.get('costing', None)
                 
-                # Save AI message with the answer
+                # STEP 5: Save AI message with the answer to chat
                 ai_message = save_message_to_db(
                     conversation_id=conversation_id,
                     sender_id=None,  # AI message has no sender
@@ -150,8 +153,8 @@ def send_message(request):
                 response_data['ai_message'] = MessageSerializer(ai_message).data
                 response_data['chatbot_answer'] = ai_answer
                 
-                # Save costing data to UpdatedCost table if present
-                if costing_data and costing_data.get('status') == 'success':
+                # STEP 6: Save costing data if present
+                if costing_data and isinstance(costing_data, dict) and costing_data.get('status') == 'success':
                     try:
                         updated_cost = save_updated_cost_to_db(
                             conversation_id=conversation_id,
@@ -170,6 +173,25 @@ def send_message(request):
                 else:
                     response_data['updated_cost_saved'] = False
                     response_data['costing_data'] = None
+            else:
+                # Handle API failure - still save a default response
+                error_message = "I apologize, but I'm currently unable to process your request. Please try again later."
+                
+                ai_message = save_message_to_db(
+                    conversation_id=conversation_id,
+                    sender_id=None,
+                    message_type='assistant',
+                    content=error_message,
+                    metadata={
+                        'api_error': True,
+                        'api_response': api_response
+                    }
+                )
+                
+                response_data['ai_message'] = MessageSerializer(ai_message).data
+                response_data['chatbot_answer'] = error_message
+                response_data['updated_cost_saved'] = False
+                response_data['costing_data'] = None
             
             return Response(response_data, status=status.HTTP_200_OK)
             
@@ -359,5 +381,104 @@ def update_cost_status(request, updated_cost_id):
     except Exception as e:
         return Response({
             'error': 'Failed to update cost status',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class SessionListCreateView(generics.ListCreateAPIView):
+    """
+    View for listing and creating chat sessions
+    """
+    serializer_class = SessionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Return only active sessions for the authenticated user
+        user_email = self.request.user.email
+        return Session.objects.filter(
+            user_id__email=user_email,
+            is_active=True
+        ).select_related('project_id', 'user_id').order_by('-created_at')
+
+    def perform_create(self, serializer):
+        # Get user from UserDetail model
+        user_email = self.request.user.email
+        user_detail = get_object_or_404(UserDetail, email=user_email)
+        
+        # Set the user and ensure the session is active
+        serializer.save(
+            user_id=user_detail,
+            is_active=True
+        )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_chats(request):
+    """
+    Get chat messages for a specific conversation
+    """
+    try:
+        conversation_id = request.GET.get('conversation_id')
+        
+        if not conversation_id:
+            return Response({
+                'error': 'conversation_id parameter is required',
+                'message': 'Please provide conversation_id in query parameters'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Fetch conversation with related session and project data
+        try:
+            conversation = Conversation.objects.select_related(
+                'session', 
+                'session__project_id'
+            ).get(conversation_id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response({
+                'error': 'Conversation not found',
+                'message': f'No conversation found with ID {conversation_id}'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Fetch all messages for this conversation in chronological order
+        messages = Messages.objects.filter(
+            conversation=conversation
+        ).order_by('created_at')
+        
+        # Serialize messages using the existing serializer
+        serialized_messages = MessageSerializer(messages, many=True).data
+        
+        # Build comprehensive response
+        response_data = {
+            'success': True,
+            'conversation': {
+                'conversation_id': conversation.conversation_id,
+                'session_id': conversation.session.session_id,
+                'project': {
+                    'project_id': conversation.session.project_id.id if conversation.session.project_id else None,
+                    'project_name': conversation.session.project_id.name if conversation.session.project_id else None,
+                    'location': conversation.session.project_id.location if conversation.session.project_id else None
+                },
+                'session_timestamps': {
+                    'created_at': conversation.session.created_at,
+                    'updated_at': conversation.session.updated_at
+                },
+                'message_count': len(serialized_messages),
+                'messages': serialized_messages
+            }
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+    except ValueError as e:
+        return Response({
+            'error': 'Invalid conversation_id',
+            'message': 'conversation_id must be a valid integer',
+            'details': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Exception as e:
+        return Response({
+            'error': 'Failed to retrieve chat messages',
+            'message': 'An unexpected error occurred while fetching the conversation',
             'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

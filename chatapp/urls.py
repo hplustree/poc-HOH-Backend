@@ -2,13 +2,13 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Session management
-    path('sessions/create/', views.create_session, name='create_chat_session'),
-    path('sessions/', views.get_user_sessions, name='get_user_sessions'),
+    # Session management (using class-based view for both list and create)
+    path('sessions/', views.SessionListCreateView.as_view(), name='session-list-create'),
     
     # Message handling
     path('messages/send/', views.send_message, name='send_message'),
     path('conversations/<int:conversation_id>/history/', views.get_conversation_history, name='get_conversation_history'),
+    path('chats/', views.get_all_chats, name='get_all_chats'),
     
     # Updated costs management
     path('updated-costs/', views.get_updated_costs, name='get_updated_costs'),

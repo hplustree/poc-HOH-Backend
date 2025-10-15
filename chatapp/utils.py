@@ -4,6 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 from .models import Session, Conversation, Messages, UpdatedCost
 from budget.models import Projects, ProjectCosts
+from news.models import Alert
 
 
 def get_project_costing_json(project_id):
@@ -127,6 +128,40 @@ def get_previous_chat_history(conversation_id, limit=10):
         return {}
 
 
+def get_accepted_decisions():
+    """
+    Get accepted decisions from Alert model where is_accept = True
+    """
+    try:
+        accepted_alerts = Alert.objects.filter(is_accept=True).order_by('-accepted_at')
+        
+        previous_decisions = {}
+        decision_count = 1
+        
+        for alert in accepted_alerts:
+            decision_data = {
+                "decision": alert.decision,
+                "reason": alert.reason,
+                "suggestion": alert.suggestion,
+                "category_name": alert.category_name,
+                "item": alert.item,
+                "old_supplier_brand": str(alert.old_supplier_brand) if alert.old_supplier_brand else "",
+                "old_rate_per_unit": float(alert.old_rate_per_unit) if alert.old_rate_per_unit else 0,
+                "new_supplier_brand": str(alert.new_supplier_brand) if alert.new_supplier_brand else "",
+                "new_rate_per_unit": float(alert.new_rate_per_unit) if alert.new_rate_per_unit else 0,
+                "cost_impact": float(alert.cost_impact) if alert.cost_impact else 0,
+                "accepted_at": alert.accepted_at.isoformat() if alert.accepted_at else None
+            }
+            previous_decisions[str(decision_count)] = decision_data
+            decision_count += 1
+        
+        return previous_decisions
+        
+    except Exception as e:
+        print(f"Error fetching accepted decisions: {str(e)}")
+        return {}
+
+
 def build_api_payload(question, session_id, conversation_id=None):
     """
     Build the complete payload for the external API
@@ -143,11 +178,14 @@ def build_api_payload(question, session_id, conversation_id=None):
         if conversation_id:
             previous_chat = get_previous_chat_history(conversation_id)
         
+        # Get accepted decisions from Alert model
+        previous_decisions = get_accepted_decisions()
+        
         # Build the payload
         payload = {
             "question": question,
             "previous_chat": previous_chat,
-            "previous_decision": {},  # Can be populated based on requirements
+            "previous_decision": previous_decisions,
             "costing_json": costing_json
         }
         

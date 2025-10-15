@@ -1069,3 +1069,186 @@ requests.exceptions.HTTPError: 500 Server Error: Internal Server Error for url: 
               DAILY NEWS PROCESSING COMPLETED               
 ============================================================
 
+2025-10-15 07:19:06,365 - INFO - News fetch API call successful - Status: 200
+2025-10-15 07:19:06,378 - INFO - Retrieved 20 articles from database
+2025-10-15 07:19:52,912 - INFO - Saved 2 alerts to database
+2025-10-15 07:19:52,912 - INFO - Decision API call successful - Status: 200
+2025-10-15 07:19:52,912 - INFO - Decision API response headers: {'date': 'Wed, 15 Oct 2025 07:19:05 GMT', 'server': 'uvicorn', 'content-length': '2496', 'content-type': 'application/json'}
+2025-10-15 07:19:52,912 - INFO - Decision API response time: 46.50s
+2025-10-15 07:19:52,912 - INFO - Decision API response body: {
+  "response": {
+    "1": {
+      "decision": "Renegotiate Tata Steel Rates for Structural Frame Due to 10% Price Increase",
+      "reason": "The Structural RCC frame (\u20b915,000,000) is supplied by Tata Steel. According to recent news: 'Tata steel price increase by 10% in major cities.' This creates direct cost impact because the increase in material prices will raise project costs significantly. The potential impact includes an increase of \u20b91,500,000 in costs for the structural frame.",
+      "suggestion": "Immediately contact Tata Steel to discuss the price increase and explore options for locking in current rates. Assess alternative suppliers for structural steel within 7 days to mitigate potential cost increases. Monitor Tata Steel's pricing updates weekly. Prepare to adjust project budgets if the price increase is implemented. Expected outcome: Cost control and budget adherence.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Structural RCC frame (columns, beams, slabs)",
+        "old_values": {
+          "supplier_brand": "Tata Steel",
+          "rate_per_unit": 5000,
+          "line_total": 15000000
+        },
+        "new_values": {
+          "supplier_brand": "Tata Steel",
+          "rate_per_unit": 5500,
+          "line_total": 16500000
+        },
+        "unit": "m\u00b3",
+        "quantity": 3000,
+        "cost_impact": 1500000,
+        "impact_reason": "Price increase - Tata Steel announced a 10% price hike."
+      }
+    },
+    "2": {
+      "decision": "Update Costing for Foundation Works Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Ultratech cement price dropped by 10% in major cities.' This creates a cost-saving opportunity because the reduction in material prices will lower project costs. The potential impact includes a decrease of \u20b9800,000 in costs for the foundation.",
+      "suggestion": "Immediately update the project costing to reflect the new lower rates for Ultratech Cement. Lock in the new pricing for foundation materials within 3 days to capture savings. Monitor Ultratech Cement's pricing trends monthly to ensure continued cost efficiency. Expected outcome: Savings of \u20b9800,000 on foundation works.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Price drop - Ultratech Cement announced a 10% price reduction."
+      }
+    }
+  }
+}
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-10-15 07:19:02.286377+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 2,
+    "total_articles_updated": 5,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 7
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 89,
+      "total_results": 7,
+      "articles_processed": 7,
+      "articles_created": 2,
+      "articles_updated": 5,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Charli XCX Reveals Why She Turned Down Tour Documentary: Feel Like My Problem With...>, <NewsArticle: tata steel price>, <NewsArticle: HouseEazy Raises INR 150 Cr To Expand Beyond Delhi NCR>, <NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>]>
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
+  1. Charli XCX Reveals Why She Turned Down Tour Documentary: Feel Like My Problem Wi...
+  2. tata steel price...
+  3. HouseEazy Raises INR 150 Cr To Expand Beyond Delhi NCR...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
+
+============================================================
+📋 DECISION API RESPONSE LOG
+============================================================
+📋 Response Headers: {'date': 'Wed, 15 Oct 2025 07:19:05 GMT', 'server': 'uvicorn', 'content-length': '2496', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 46.50 seconds
+------------------------------------------------------------
+📄 Response Body (JSON):
+{
+  "response": {
+    "1": {
+      "decision": "Renegotiate Tata Steel Rates for Structural Frame Due to 10% Price Increase",
+      "reason": "The Structural RCC frame (\u20b915,000,000) is supplied by Tata Steel. According to recent news: 'Tata steel price increase by 10% in major cities.' This creates direct cost impact because the increase in material prices will raise project costs significantly. The potential impact includes an increase of \u20b91,500,000 in costs for the structural frame.",
+      "suggestion": "Immediately contact Tata Steel to discuss the price increase and explore options for locking in current rates. Assess alternative suppliers for structural steel within 7 days to mitigate potential cost increases. Monitor Tata Steel's pricing updates weekly. Prepare to adjust project budgets if the price increase is implemented. Expected outcome: Cost control and budget adherence.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Structural RCC frame (columns, beams, slabs)",
+        "old_values": {
+          "supplier_brand": "Tata Steel",
+          "rate_per_unit": 5000,
+          "line_total": 15000000
+        },
+        "new_values": {
+          "supplier_brand": "Tata Steel",
+          "rate_per_unit": 5500,
+          "line_total": 16500000
+        },
+        "unit": "m\u00b3",
+        "quantity": 3000,
+        "cost_impact": 1500000,
+        "impact_reason": "Price increase - Tata Steel announced a 10% price hike."
+      }
+    },
+    "2": {
+      "decision": "Update Costing for Foundation Works Due to 10% Price Drop",
+      "reason": "The Foundation (RCC footings, piling) (\u20b98,000,000) is supplied by Ultratech Cement. According to recent news: 'Ultratech cement price dropped by 10% in major cities.' This creates a cost-saving opportunity because the reduction in material prices will lower project costs. The potential impact includes a decrease of \u20b9800,000 in costs for the foundation.",
+      "suggestion": "Immediately update the project costing to reflect the new lower rates for Ultratech Cement. Lock in the new pricing for foundation materials within 3 days to capture savings. Monitor Ultratech Cement's pricing trends monthly to ensure continued cost efficiency. Expected outcome: Savings of \u20b9800,000 on foundation works.",
+      "updated_costing": {
+        "category_name": "Civil & Structural Works",
+        "item": "Foundation (RCC footings, piling)",
+        "old_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 4000,
+          "line_total": 8000000
+        },
+        "new_values": {
+          "supplier_brand": "Ultratech Cement",
+          "rate_per_unit": 3600,
+          "line_total": 7200000
+        },
+        "unit": "m\u00b3",
+        "quantity": 2000,
+        "cost_impact": -800000,
+        "impact_reason": "Price drop - Ultratech Cement announced a 10% price reduction."
+      }
+    }
+  }
+}
+💾 Saving alerts to database...
+✅ Saved alert 3: Renegotiate Tata Steel Rates for Structural Frame ...
+✅ Saved alert 4: Update Costing for Foundation Works Due to 10% Pri...
+💾 Successfully saved 2 alerts to database
+============================================================
+📋 END DECISION API RESPONSE LOG
+============================================================
+
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 50.63 seconds
+
+============================================================
+              DAILY NEWS PROCESSING COMPLETED               
+============================================================
+
