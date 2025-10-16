@@ -7,7 +7,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from .models import Session, Conversation, Messages, UpdatedCost
 from .serializers import (
-    SessionSerializer, ConversationSerializer, MessageSerializer, 
+    SessionSerializer, ConversationSerializer, ConversationCreateSerializer, MessageSerializer, 
     MessageCreateSerializer, UpdatedCostSerializer, UpdatedCostStatusSerializer
 )
 from .utils import build_api_payload, send_to_external_api, save_message_to_db, save_updated_cost_to_db
@@ -65,12 +65,25 @@ def send_message(request):
     """
     Handle user message: save to DB first, then call external chatbot API with complete payload
     """
+    print("\n=== Incoming Request ===")
+    print(f"Method: {request.method}")
+    print(f"Content-Type: {request.content_type}")
+    print(f"Headers: {dict(request.headers)}")
+    print(f"Data: {request.data}")
+    print("====================\n")
+    
     try:
         serializer = MessageCreateSerializer(data=request.data)
         if not serializer.is_valid():
+            print("\n=== Validation Errors ===")
+            print(serializer.errors)
+            print("======================\n")
             return Response({
+                'success': False,
                 'error': 'Invalid data',
-                'details': serializer.errors
+                'details': serializer.errors,
+                'required_fields': ['session_id', 'content'],
+                'optional_fields': ['conversation_id', 'message_type']
             }, status=status.HTTP_400_BAD_REQUEST)
         
         session_id = serializer.validated_data['session_id']
@@ -99,7 +112,10 @@ def send_message(request):
             else:
                 # Create new conversation
                 session = Session.objects.get(session_id=session_id)
-                conversation = Conversation.objects.create(session=session)
+                conversation = Conversation.objects.create(
+                    session=session,
+                    project_id=session.project_id  # Use project_id from session
+                )
                 conversation_id = conversation.conversation_id
             
             # STEP 1: Save user message to database FIRST
@@ -414,6 +430,99 @@ class SessionListCreateView(generics.ListCreateAPIView):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def get_all_conversations(request):
+    """
+    Get all conversations for the authenticated user
+    """
+    try:
+        user_email = request.user.email
+        
+        # Get all conversations for the user's sessions
+        conversations = Conversation.objects.filter(
+            session__user_id__email=user_email,
+            session__is_active=True
+        ).select_related(
+            'session', 
+            'session__project_id', 
+            'session__user_id'
+        ).order_by('-conversation_id')
+        
+        serialized_conversations = ConversationSerializer(conversations, many=True).data
+        
+        return Response({
+            'success': True,
+            'count': len(serialized_conversations),
+            'conversations': serialized_conversations
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'error': 'Failed to retrieve conversations',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_conversation(request):
+    """
+    Create a new conversation within a session
+    """
+    try:
+        serializer = ConversationCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                'success': False,
+                'error': 'Invalid data',
+                'details': serializer.errors,
+                'required_fields': ['session_id', 'project_id']
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verify the session belongs to the authenticated user
+        session_id = serializer.validated_data['session_id']
+        project_id = serializer.validated_data['project_id']
+        user_email = request.user.email
+        
+        try:
+            session = Session.objects.get(
+                session_id=session_id,
+                user_id__email=user_email,
+                is_active=True
+            )
+        except Session.DoesNotExist:
+            return Response({
+                'error': 'Session not found or you do not have permission to access it'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Validate that project_id matches the session's project
+        if project_id != session.project_id.id:
+            return Response({
+                'error': 'Project ID does not match the session\'s project',
+                'session_project_id': session.project_id.id,
+                'provided_project_id': project_id
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create the conversation
+        conversation = serializer.save()
+        
+        # Return the created conversation with full details
+        conversation_data = ConversationSerializer(conversation).data
+        
+        return Response({
+            'success': True,
+            'message': 'Conversation created successfully',
+            'conversation': conversation_data
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({
+            'error': 'Failed to create conversation',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_all_chats(request):
     """
     Get chat messages for a specific conversation
@@ -480,5 +589,69 @@ def get_all_chats(request):
         return Response({
             'error': 'Failed to retrieve chat messages',
             'message': 'An unexpected error occurred while fetching the conversation',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_conversation(request, conversation_id):
+    """
+    Delete a conversation and all related data (messages, updated_costs)
+    Only the owner of the conversation can delete it
+    """
+    try:
+        user_email = request.user.email
+        
+        # Get conversation with related data for verification
+        try:
+            conversation = Conversation.objects.select_related(
+                'session', 
+                'session__user_id',
+                'project_id'
+            ).get(conversation_id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response({
+                'error': 'Conversation not found',
+                'message': f'No conversation found with ID {conversation_id}'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Verify ownership - only the user who owns the session can delete
+        if conversation.session.user_id.email != user_email:
+            return Response({
+                'error': 'Permission denied',
+                'message': 'You can only delete your own conversations'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get counts before deletion for response
+        message_count = conversation.messages.count()
+        updated_cost_count = conversation.updated_costs.count()
+        
+        # Store conversation info for response
+        conversation_info = {
+            'conversation_id': conversation.conversation_id,
+            'project_name': conversation.project_id.name,
+            'session_id': conversation.session.session_id,
+            'message_count': message_count,
+            'updated_cost_count': updated_cost_count
+        }
+        
+        # Delete conversation (CASCADE will handle related objects)
+        with transaction.atomic():
+            conversation.delete()
+        
+        return Response({
+            'success': True,
+            'message': 'Conversation deleted successfully',
+            'deleted_conversation': conversation_info,
+            'cascade_deletions': {
+                'messages_deleted': message_count,
+                'updated_costs_deleted': updated_cost_count
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'error': 'Failed to delete conversation',
             'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1252,3 +1252,90 @@ requests.exceptions.HTTPError: 500 Server Error: Internal Server Error for url: 
               DAILY NEWS PROCESSING COMPLETED               
 ============================================================
 
+2025-10-16 07:19:06,651 - INFO - News fetch API call successful - Status: 200
+2025-10-16 07:19:06,666 - INFO - Retrieved 20 articles from database
+2025-10-16 07:19:07,724 - ERROR - Error saving alerts to database: 'str' object has no attribute 'items'
+2025-10-16 07:19:07,724 - INFO - Decision API call successful - Status: 200
+2025-10-16 07:19:07,724 - INFO - Decision API response headers: {'date': 'Thu, 16 Oct 2025 07:19:06 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
+2025-10-16 07:19:07,724 - INFO - Decision API response time: 1.06s
+2025-10-16 07:19:07,724 - INFO - Decision API response body: {
+  "response": "NO decision changes required - news does not impact project costing"
+}
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-10-16 07:19:02.248014+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 1,
+    "total_articles_updated": 2,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 3
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 94,
+      "total_results": 3,
+      "articles_processed": 3,
+      "articles_created": 1,
+      "articles_updated": 2,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Perez Hilton claims Charli XCX is "throwing shade at Taylor Swift" after she disses tour documentari>, <NewsArticle: Charli XCX Reveals Why She Turned Down Tour Documentary: Feel Like My Problem With...>, <NewsArticle: tata steel price>, <NewsArticle: HouseEazy Raises INR 150 Cr To Expand Beyond Delhi NCR>, <NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>]>
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
+  1. Perez Hilton claims Charli XCX is "throwing shade at Taylor Swift" after she dis...
+  2. Charli XCX Reveals Why She Turned Down Tour Documentary: Feel Like My Problem Wi...
+  3. tata steel price...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
+
+============================================================
+📋 DECISION API RESPONSE LOG
+============================================================
+📋 Response Headers: {'date': 'Thu, 16 Oct 2025 07:19:06 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 1.06 seconds
+------------------------------------------------------------
+📄 Response Body (JSON):
+{
+  "response": "NO decision changes required - news does not impact project costing"
+}
+💾 Saving alerts to database...
+❌ Error saving alerts to database: 'str' object has no attribute 'items'
+============================================================
+📋 END DECISION API RESPONSE LOG
+============================================================
+
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 5.48 seconds
+
+============================================================
+              DAILY NEWS PROCESSING COMPLETED               
+============================================================
+

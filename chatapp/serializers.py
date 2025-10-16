@@ -15,10 +15,47 @@ class SessionSerializer(serializers.ModelSerializer):
 
 
 class ConversationSerializer(serializers.ModelSerializer):
+    session_id = serializers.IntegerField(source='session.session_id', read_only=True)
+    project_name = serializers.CharField(source='project_id.name', read_only=True)
+    user_email = serializers.CharField(source='session.user_id.email', read_only=True)
+    message_count = serializers.SerializerMethodField()
+    
     class Meta:
         model = Conversation
-        fields = ['conversation_id', 'session']
+        fields = ['conversation_id', 'session_id', 'project_id', 'project_name', 'user_email', 'message_count']
         read_only_fields = ['conversation_id']
+    
+    def get_message_count(self, obj):
+        return obj.messages.count()
+
+class ConversationCreateSerializer(serializers.ModelSerializer):
+    session_id = serializers.IntegerField()
+    project_id = serializers.IntegerField(required=True)
+    
+    class Meta:
+        model = Conversation
+        fields = ['session_id', 'project_id']
+    
+    def validate_session_id(self, value):
+        try:
+            session = Session.objects.get(session_id=value, is_active=True)
+            return value
+        except Session.DoesNotExist:
+            raise serializers.ValidationError("Invalid or inactive session ID")
+    
+    def validate_project_id(self, value):
+        try:
+            project = Projects.objects.get(id=value)
+            return value
+        except Projects.DoesNotExist:
+            raise serializers.ValidationError("Invalid project ID")
+    
+    def create(self, validated_data):
+        session_id = validated_data['session_id']
+        project_id = validated_data['project_id']
+        session = Session.objects.get(session_id=session_id)
+        project = Projects.objects.get(id=project_id)
+        return Conversation.objects.create(session=session, project_id=project)
 
 
 class MessageSerializer(serializers.ModelSerializer):

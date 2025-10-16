@@ -27,6 +27,7 @@ class Conversation(models.Model):
     """Individual conversation within a session"""
     conversation_id = models.AutoField(primary_key=True)
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='conversations')
+    project_id = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name='conversations')
     
     class Meta:
         db_table = 'conversations'
@@ -35,7 +36,7 @@ class Conversation(models.Model):
         verbose_name_plural = 'Conversations'
     
     def __str__(self):
-        return f"Conversation {self.conversation_id}"
+        return f"Conversation {self.conversation_id} - {self.project_id.name}"
 
 
 class Messages(models.Model):

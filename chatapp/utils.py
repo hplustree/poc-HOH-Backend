@@ -209,7 +209,7 @@ def send_to_external_api(payload, api_url="http://0.0.0.0:8000/api/chatbot"):
             api_url,
             headers=headers,
             data=json.dumps(payload),
-            timeout=30
+            timeout=300
         )
         
         if response.status_code == 200:

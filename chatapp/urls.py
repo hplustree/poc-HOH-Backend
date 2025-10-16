@@ -5,6 +5,11 @@ urlpatterns = [
     # Session management (using class-based view for both list and create)
     path('sessions/', views.SessionListCreateView.as_view(), name='session-list-create'),
     
+    # Conversation management
+    path('conversations/', views.get_all_conversations, name='get_all_conversations'),
+    path('conversations/create/', views.create_conversation, name='create_conversation'),
+    path('conversations/<int:conversation_id>/delete/', views.delete_conversation, name='delete_conversation'),
+    
     # Message handling
     path('messages/send/', views.send_message, name='send_message'),
     path('conversations/<int:conversation_id>/history/', views.get_conversation_history, name='get_conversation_history'),
