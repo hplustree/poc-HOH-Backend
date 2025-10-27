@@ -2,10 +2,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
+from django.utils import timezone
 from .models import Projects, ProjectCosts, ProjectOverheads
-from .serializers import PDFExtractionSerializer, ProjectSerializer
+from .serializers import PDFExtractionSerializer, ProjectSerializer, ChatAcceptRequestSerializer, ChatAcceptResponseSerializer
 from rest_framework.permissions import IsAuthenticated
+from chatapp.models import Messages
 import logging
+import requests
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -170,3 +174,254 @@ class PDFExtractionView(APIView):
                 {'error': f'Failed to process PDF import: {str(e)}'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+def call_chatbot_decision_accept_api(approval, costing_json):
+    """
+    Utility function to call the external chatbot-decision-accept API
+    """
+    api_url = "http://0.0.0.0:8000/api/chatbot-decision-accept"
+    
+    payload = {
+        "approval": approval,
+        "costing_json": costing_json
+    }
+    
+    headers = {
+        "accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        logger.info(f"Calling chatbot decision accept API with approval: {approval}")
+        response = requests.post(api_url, json=payload, headers=headers, timeout=300)
+        response.raise_for_status()
+        
+        api_response = response.json()
+        logger.info(f"Chatbot API response received: {api_response.get('status', 'unknown')}")
+        
+        return api_response
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error calling chatbot decision accept API: {str(e)}")
+        raise Exception(f"Failed to call chatbot API: {str(e)}")
+    except json.JSONDecodeError as e:
+        logger.error(f"Error parsing chatbot API response: {str(e)}")
+        raise Exception(f"Invalid response from chatbot API: {str(e)}")
+
+
+class ChatAcceptView(APIView):
+    """
+    API endpoint to handle chat-accept requests with message_id.
+    Retrieves costing_json from message metadata, calls external API, and updates budget.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, format=None):
+        # Validate the incoming data
+        serializer = ChatAcceptRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        message_id = serializer.validated_data['message_id']
+        approval = serializer.validated_data['approval']
+        
+        try:
+            # Get the message and extract costing data from metadata
+            message = Messages.objects.get(message_id=message_id)
+            chatbot_response = message.metadata.get('chatbot_response', {})
+            costing_data = chatbot_response.get('costing', {})
+            
+            if not costing_data:
+                return Response(
+                    {'error': 'No costing data found in message metadata'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Update the original message to hide it
+            message.is_hide = True
+            message.save()
+            
+            # If approval is 'reject', just return success without calling external API
+            if approval == 'reject':
+                return Response({
+                    'status': 'success',
+                    'message': 'Message rejected and hidden successfully',
+                    'approval': approval
+                }, status=status.HTTP_200_OK)
+            
+            # Extract the actual costing_json from the nested structure for 'accept' approval
+            costing_json = costing_data.get('data', costing_data)
+            
+            # Call the external chatbot decision accept API
+            api_response = call_chatbot_decision_accept_api(approval, costing_json)
+            
+            # Validate the API response
+            response_serializer = ChatAcceptResponseSerializer(data=api_response)
+            if not response_serializer.is_valid():
+                logger.error(f"Invalid API response: {response_serializer.errors}")
+                return Response(
+                    {'error': 'Invalid response from chatbot API', 'details': response_serializer.errors}, 
+                    status=status.HTTP_502_BAD_GATEWAY
+                )
+            
+            # Save the chatbot answer as a new message
+            answer = api_response.get('answer', '')
+            if answer:
+                Messages.objects.create(
+                    conversation=message.conversation,
+                    session=message.session,
+                    message_type='assistant',
+                    content=answer,
+                    metadata={'source': 'chat_accept_api', 'original_message_id': message_id}
+                )
+            
+            # Update the budget with version control for 'accept' approval
+            updated_costing_json = api_response.get('costing_json', {})
+            if updated_costing_json:
+                self._update_budget_with_version_control(updated_costing_json, request.user)
+            
+            return Response({
+                'status': 'success',
+                'message': f'Chat accept processed successfully with approval: {approval}',
+                'answer': answer,
+                'costing_json': api_response.get('costing_json', {})
+            }, status=status.HTTP_200_OK)
+            
+        except Messages.DoesNotExist:
+            return Response(
+                {'error': 'Message not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error processing chat accept: {str(e)}", exc_info=True)
+            return Response(
+                {'error': f'Failed to process chat accept: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def _update_budget_with_version_control(self, costing_json, user):
+        """
+        Update budget data with automatic version control based on costing_json
+        """
+        try:
+            with transaction.atomic():
+                project_data = costing_json.get('project', {})
+                cost_items = costing_json.get('cost_line_items', [])
+                overhead_items = costing_json.get('overheads', [])
+                
+                if not project_data.get('name'):
+                    logger.warning("No project name found in costing_json")
+                    return
+                
+                # Find or create project
+                project, created = Projects.objects.get_or_create(
+                    name=project_data['name'],
+                    defaults={
+                        'location': project_data.get('location'),
+                        'start_date': project_data.get('start_date'),
+                        'end_date': project_data.get('end_date'),
+                        '_changed_by': f'chat_accept_{user.username}',
+                        '_change_reason': 'Updated from chat accept API'
+                    }
+                )
+                
+                # If project exists, update it with version control
+                if not created:
+                    update_fields = {}
+                    tracked_fields = ['location', 'start_date', 'end_date']
+                    
+                    for field in tracked_fields:
+                        if field in project_data and getattr(project, field) != project_data[field]:
+                            update_fields[field] = project_data[field]
+                    
+                    if update_fields:
+                        project._changed_by = f'chat_accept_{user.username}'
+                        project._change_reason = 'Updated from chat accept API'
+                        
+                        for field, value in update_fields.items():
+                            setattr(project, field, value)
+                        project.save()
+                
+                # Update project costs with version control
+                if cost_items:
+                    for item in cost_items:
+                        # Find existing cost item
+                        existing_costs = ProjectCosts.objects.filter(
+                            project=project,
+                            category_code=item.get('category_code'),
+                            item_description=item.get('item_description')
+                        )
+                        
+                        if existing_costs.exists():
+                            # Update existing cost item with version control
+                            existing_cost = existing_costs.first()
+                            
+                            # Set change tracking attributes
+                            existing_cost._changed_by = f'chat_accept_{user.username}'
+                            existing_cost._change_reason = 'Updated from chat accept API'
+                            
+                            # Update fields
+                            existing_cost.quantity = item.get('quantity', existing_cost.quantity)
+                            existing_cost.rate_per_unit = item.get('rate_per_unit', existing_cost.rate_per_unit)
+                            existing_cost.supplier_brand = item.get('supplier_brand', existing_cost.supplier_brand)
+                            existing_cost.category_total = item.get('category_total', existing_cost.category_total)
+                            existing_cost.unit = item.get('unit', existing_cost.unit)
+                            existing_cost.category_name = item.get('category_name', existing_cost.category_name)
+                            
+                            existing_cost.save()
+                        else:
+                            # Create new cost item
+                            ProjectCosts.objects.create(
+                                project=project,
+                                category_code=item.get('category_code'),
+                                category_name=item.get('category_name'),
+                                item_description=item.get('item_description'),
+                                supplier_brand=item.get('supplier_brand'),
+                                unit=item.get('unit'),
+                                quantity=item.get('quantity', 0),
+                                rate_per_unit=item.get('rate_per_unit', 0),
+                                line_total=item.get('line_total', 0),
+                                category_total=item.get('category_total'),
+                                _changed_by=f'chat_accept_{user.username}',
+                                _change_reason='Created from chat accept API'
+                            )
+                
+                # Update project overheads with version control
+                if overhead_items:
+                    for item in overhead_items:
+                        existing_overheads = ProjectOverheads.objects.filter(
+                            project=project,
+                            overhead_type=item.get('overhead_type')
+                        )
+                        
+                        if existing_overheads.exists():
+                            # Update existing overhead with version control
+                            existing_overhead = existing_overheads.first()
+                            
+                            existing_overhead._changed_by = f'chat_accept_{user.username}'
+                            existing_overhead._change_reason = 'Updated from chat accept API'
+                            
+                            existing_overhead.description = item.get('description', existing_overhead.description)
+                            existing_overhead.basis = item.get('basis', existing_overhead.basis)
+                            existing_overhead.percentage = item.get('percentage', existing_overhead.percentage)
+                            existing_overhead.amount = item.get('amount', existing_overhead.amount)
+                            
+                            existing_overhead.save()
+                        else:
+                            # Create new overhead
+                            ProjectOverheads.objects.create(
+                                project=project,
+                                overhead_type=item.get('overhead_type'),
+                                description=item.get('description'),
+                                basis=item.get('basis'),
+                                percentage=item.get('percentage', 0),
+                                amount=item.get('amount', 0),
+                                _changed_by=f'chat_accept_{user.username}',
+                                _change_reason='Created from chat accept API'
+                            )
+                
+                logger.info(f"Budget updated successfully for project: {project.name}")
+                
+        except Exception as e:
+            logger.error(f"Error updating budget with version control: {str(e)}", exc_info=True)
+            raise

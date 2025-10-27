@@ -54,6 +54,7 @@ class Messages(models.Model):
     message_type = models.CharField(max_length=20, choices=MESSAGE_TYPES, default='user')
     content = models.TextField()
     metadata = models.JSONField(default=dict, blank=True)
+    is_hide = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     

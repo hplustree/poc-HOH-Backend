@@ -33,7 +33,7 @@ def process_single_api_call(api_url, params):
     Helper function to process a single API call and return processed data.
     """
     # Make API request
-    response = requests.get(api_url, params=params, timeout=30)
+    response = requests.get(api_url, params=params, timeout=300)
     response.raise_for_status()
     
     data = response.json()
