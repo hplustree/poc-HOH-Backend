@@ -1,21 +1,22 @@
 import os
 import requests
-from datetime import datetime
-from django.conf import settings
+import logging
+from datetime import datetime, timedelta
 from django.utils import timezone
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views import View
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status, serializers
 from .models import NewsArticle, NewsAPIResponse, Alert
 from .serializers import AlertSerializer, AlertStatusUpdateSerializer
+from budget.models import Projects, ProjectCosts, ProjectOverheads
 from dotenv import load_dotenv
+
 load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+
 class NewsArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsArticle
@@ -100,7 +101,7 @@ def process_single_api_call(api_url, params):
                 articles_updated += 1
                 
         except Exception as e:
-            print(f"Error processing article {article_data.get('article_id')}: {str(e)}")
+            logger.error(f"Error processing article {article_data.get('article_id')}: {str(e)}")
             articles_skipped += 1
             continue
     
@@ -196,7 +197,7 @@ def fetch_and_store_news(request):
         
         for i, params in enumerate(query_params_list, 1):
             try:
-                print(f"Processing API call {i}/{len(query_params_list)} with query: {params['q']}")
+                logger.info(f"Processing API call {i}/{len(query_params_list)} with query: {params['q']}")
                 
                 # Process single API call
                 result = process_single_api_call(api_url, params)
@@ -208,10 +209,10 @@ def fetch_and_store_news(request):
                 total_articles_skipped += result['articles_skipped']
                 total_results_count += result['total_results']
                 
-                print(f"Completed API call {i}: {result['articles_created']} created, {result['articles_updated']} updated, {result['articles_skipped']} skipped")
+                logger.info(f"Completed API call {i}: {result['articles_created']} created, {result['articles_updated']} updated, {result['articles_skipped']} skipped")
                 
             except Exception as e:
-                print(f"Error in API call {i} with query '{params['q']}': {str(e)}")
+                logger.error(f"Error in API call {i} with query '{params['q']}': {str(e)}")
                 all_results.append({
                     'query': params['q'],
                     'error': str(e),
@@ -341,11 +342,20 @@ def get_news_articles(request):
 @permission_classes([IsAuthenticated])
 def get_unsent_alerts(request):
     """
-    Get all alerts where is_sent = false
+    Get alerts from previous day where is_sent = false
     """
     try:
-        # Get all unsent alerts ordered by creation date
-        alerts = Alert.objects.filter(is_sent=False).order_by('-created_at')
+        # Calculate previous day date range
+        now = timezone.now()
+        previous_day_start = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        previous_day_end = (now - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        # Get unsent alerts from previous day only
+        alerts = Alert.objects.filter(
+            is_sent=False,
+            created_at__gte=previous_day_start,
+            created_at__lte=previous_day_end
+        ).order_by('-created_at')
         
         # Serialize data
         serializer = AlertSerializer(alerts, many=True)
@@ -353,12 +363,17 @@ def get_unsent_alerts(request):
         return Response({
             'success': True,
             'count': len(serializer.data),
-            'alerts': serializer.data
+            'alerts': serializer.data,
+            'filter_info': {
+                'previous_day_start': previous_day_start.isoformat(),
+                'previous_day_end': previous_day_end.isoformat(),
+                'current_time': now.isoformat()
+            }
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
         return Response({
-            'error': 'Failed to retrieve unsent alerts',
+            'error': 'Failed to retrieve previous day unsent alerts',
             'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -372,9 +387,6 @@ def get_and_mark_accepted_alerts(request):
     """
     try:
         from budget.models import ProjectCosts
-        import logging
-        
-        logger = logging.getLogger(__name__)
         
         # Get alerts that are accepted but not sent yet
         alerts = Alert.objects.filter(is_sent=False, is_accept=True).order_by('-created_at')
@@ -551,5 +563,376 @@ def update_alert_status(request, alert_id):
     except Exception as e:
         return Response({
             'error': 'Failed to update alert status',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class NewsDecisionAcceptRequestSerializer(serializers.Serializer):
+    """Serializer for the news decision accept API request"""
+    alert_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        help_text="List of alert IDs to process"
+    )
+
+
+class NewsDecisionAcceptResponseSerializer(serializers.Serializer):
+    """Serializer for the news decision accept API response"""
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    external_api_response = serializers.JSONField()
+    processed_alerts = serializers.ListField()
+
+
+def get_latest_project_costing_data():
+    """
+    Get the latest project costing data in the required format.
+    Uses the unified costing generator from chatapp.utils.
+    """
+    try:
+        from chatapp.utils import generate_costing_json_from_db
+        
+        result = generate_costing_json_from_db(project_id=None, include_wrapper=False)
+        
+        # Handle error cases
+        if result.get("status") == "error":
+            return None
+            
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error getting latest project costing data: {str(e)}")
+        return None
+
+
+def build_updated_costing_parameter(alerts):
+    """
+    Build the updated_costing_parameter from alert raw_response data
+    """
+    updated_costing_parameter = {}
+    
+    for index, alert in enumerate(alerts, 1):
+        try:
+            # Use the raw_response data stored in the alert
+            raw_response = alert.raw_response
+            
+            # Build the structure from alert data
+            updated_costing_parameter[str(index)] = {
+                "decision": alert.decision,
+                "reason": alert.reason,
+                "suggestion": alert.suggestion,
+                "updated_costing": {
+                    "category_name": alert.category_name or "",
+                    "item": alert.item or "",
+                    "old_values": {
+                        "supplier_brand": alert.old_supplier_brand or "",
+                        "rate_per_unit": float(alert.old_rate_per_unit) if alert.old_rate_per_unit else 0,
+                        "line_total": float(alert.old_line_total) if alert.old_line_total else 0
+                    },
+                    "new_values": {
+                        "supplier_brand": alert.new_supplier_brand or "",
+                        "rate_per_unit": float(alert.new_rate_per_unit) if alert.new_rate_per_unit else 0,
+                        "line_total": float(alert.new_line_total) if alert.new_line_total else 0
+                    },
+                    "unit": alert.unit or "",
+                    "quantity": float(alert.quantity) if alert.quantity else 0,
+                    "cost_impact": float(alert.cost_impact) if alert.cost_impact else 0,
+                    "impact_reason": alert.impact_reason or ""
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing alert {alert.alert_id}: {str(e)}")
+            continue
+    
+    return updated_costing_parameter
+
+
+def update_budget_from_external_response(external_response_data, user, alert_ids):
+    """
+    Update budget data from external API response with version control
+    """
+    try:
+        from django.db import transaction
+        
+        update_summary = {
+            'updated_project': False,
+            'updated_costs': 0,
+            'updated_overheads': 0,
+            'errors': []
+        }
+        
+        with transaction.atomic():
+            # Get the latest project
+            latest_project = Projects.objects.order_by('-updated_at').first()
+            
+            if not latest_project:
+                update_summary['errors'].append('No project found to update')
+                return update_summary
+            
+            # Update project data if changed
+            project_data = external_response_data.get('project', {})
+            if project_data:
+                project_changed = False
+                original_name = latest_project.name
+                original_location = latest_project.location
+                original_start_date = latest_project.start_date
+                original_end_date = latest_project.end_date
+                original_total_cost = latest_project.total_cost
+                
+                if project_data.get('name') and project_data['name'] != latest_project.name:
+                    latest_project.name = project_data['name']
+                    project_changed = True
+                
+                if project_data.get('location') and project_data['location'] != latest_project.location:
+                    latest_project.location = project_data['location']
+                    project_changed = True
+                
+                if project_data.get('start_date') and project_data['start_date'] != latest_project.start_date:
+                    latest_project.start_date = project_data['start_date']
+                    project_changed = True
+                
+                if project_data.get('end_date') and project_data['end_date'] != latest_project.end_date:
+                    latest_project.end_date = project_data['end_date']
+                    project_changed = True
+                
+                if (project_data.get('total_cost') is not None and 
+                    float(project_data['total_cost']) != float(latest_project.total_cost or 0)):
+                    latest_project.total_cost = project_data['total_cost']
+                    project_changed = True
+                
+                if project_changed:
+                    latest_project._changed_by = f'news_decision_api_{user.username}'
+                    latest_project._change_reason = f'Updated from news decision API with alerts: {alert_ids}'
+                    latest_project.save()
+                    update_summary['updated_project'] = True
+            
+            # Update cost line items
+            cost_line_items = external_response_data.get('cost_line_items', [])
+            for item_data in cost_line_items:
+                try:
+                    # Find matching cost item by category and description
+                    project_cost = ProjectCosts.objects.filter(
+                        project=latest_project,
+                        category_code=item_data.get('category_code'),
+                        item_description=item_data.get('item_description')
+                    ).first()
+                    
+                    if project_cost:
+                        # Check if any values have changed
+                        changes_made = []
+                        
+                        if (item_data.get('supplier_brand') and 
+                            item_data['supplier_brand'] != project_cost.supplier_brand):
+                            project_cost.supplier_brand = item_data['supplier_brand']
+                            changes_made.append('supplier_brand')
+                        
+                        if (item_data.get('quantity') and 
+                            float(item_data['quantity']) != float(project_cost.quantity)):
+                            project_cost.quantity = item_data['quantity']
+                            changes_made.append('quantity')
+                        
+                        if (item_data.get('rate_per_unit') and 
+                            float(item_data['rate_per_unit']) != float(project_cost.rate_per_unit)):
+                            project_cost.rate_per_unit = item_data['rate_per_unit']
+                            changes_made.append('rate_per_unit')
+                        
+                        if (item_data.get('category_total') and 
+                            float(item_data['category_total']) != float(project_cost.category_total or 0)):
+                            project_cost.category_total = item_data['category_total']
+                            changes_made.append('category_total')
+                        
+                        # Only save if there are changes
+                        if changes_made:
+                            project_cost._changed_by = f'news_decision_api_{user.username}'
+                            project_cost._change_reason = f'Updated from news decision API with alerts: {alert_ids} - Changed: {", ".join(changes_made)}'
+                            project_cost.save()
+                            update_summary['updated_costs'] += 1
+                            
+                            logger.info(f'Updated ProjectCost ID {project_cost.id}: {", ".join(changes_made)}')
+                    
+                except Exception as e:
+                    error_msg = f'Error updating cost item {item_data.get("item_description", "unknown")}: {str(e)}'
+                    update_summary['errors'].append(error_msg)
+                    logger.error(error_msg)
+            
+            # Update overheads
+            overheads_data = external_response_data.get('overheads', [])
+            for overhead_data in overheads_data:
+                try:
+                    # Find matching overhead by type
+                    project_overhead = ProjectOverheads.objects.filter(
+                        project=latest_project,
+                        overhead_type=overhead_data.get('overhead_type')
+                    ).first()
+                    
+                    if project_overhead:
+                        # Check if any values have changed
+                        changes_made = []
+                        
+                        if (overhead_data.get('percentage') and 
+                            float(overhead_data['percentage']) != float(project_overhead.percentage)):
+                            project_overhead.percentage = overhead_data['percentage']
+                            changes_made.append('percentage')
+                        
+                        if (overhead_data.get('amount') and 
+                            float(overhead_data['amount']) != float(project_overhead.amount)):
+                            project_overhead.amount = overhead_data['amount']
+                            changes_made.append('amount')
+                        
+                        if (overhead_data.get('description') and 
+                            overhead_data['description'] != project_overhead.description):
+                            project_overhead.description = overhead_data['description']
+                            changes_made.append('description')
+                        
+                        # Only save if there are changes
+                        if changes_made:
+                            project_overhead._changed_by = f'news_decision_api_{user.username}'
+                            project_overhead._change_reason = f'Updated from news decision API with alerts: {alert_ids} - Changed: {", ".join(changes_made)}'
+                            project_overhead.save()
+                            update_summary['updated_overheads'] += 1
+                            
+                            logger.info(f'Updated ProjectOverhead ID {project_overhead.id}: {", ".join(changes_made)}')
+                    
+                    else:
+                        # Create new overhead if it doesn't exist
+                        if overhead_data.get('overhead_type') and overhead_data.get('percentage') and overhead_data.get('amount'):
+                            new_overhead = ProjectOverheads.objects.create(
+                                project=latest_project,
+                                overhead_type=overhead_data['overhead_type'],
+                                description=overhead_data.get('description', ''),
+                                basis=overhead_data.get('basis', 'On total cost'),
+                                percentage=overhead_data['percentage'],
+                                amount=overhead_data['amount']
+                            )
+                            new_overhead._changed_by = f'news_decision_api_{user.username}'
+                            new_overhead._change_reason = f'Created from news decision API with alerts: {alert_ids}'
+                            new_overhead.save()
+                            update_summary['updated_overheads'] += 1
+                            
+                            logger.info(f'Created new ProjectOverhead ID {new_overhead.id}: {overhead_data["overhead_type"]}')
+                
+                except Exception as e:
+                    error_msg = f'Error updating overhead {overhead_data.get("overhead_type", "unknown")}: {str(e)}'
+                    update_summary['errors'].append(error_msg)
+                    logger.error(error_msg)
+        
+        return update_summary
+        
+    except Exception as e:
+        logger.error(f"Error updating budget from external response: {str(e)}")
+        return {
+            'updated_project': False,
+            'updated_costs': 0,
+            'updated_overheads': 0,
+            'errors': [f'Database update failed: {str(e)}']
+        }
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def process_news_alerts_and_call_decision_api(request):
+    """
+    Process news alerts by IDs and call the external news-decision-accept API
+    
+    Expected payload:
+    {
+        "alert_ids": [1, 2, 3, 4]
+    }
+    """
+    try:
+        # Validate request data
+        serializer = NewsDecisionAcceptRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                'error': 'Invalid request data',
+                'details': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        alert_ids = serializer.validated_data['alert_ids']
+        
+        # Fetch alerts by IDs
+        alerts = Alert.objects.filter(alert_id__in=alert_ids).order_by('alert_id')
+        
+        if not alerts.exists():
+            return Response({
+                'error': 'No alerts found',
+                'message': f'No alerts found for IDs: {alert_ids}'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get latest costing data from budget models
+        costing_json = get_latest_project_costing_data()
+        
+        if not costing_json:
+            return Response({
+                'error': 'No project costing data found',
+                'message': 'Unable to fetch latest project costing data from budget models'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Build updated_costing_parameter from alerts
+        updated_costing_parameter = build_updated_costing_parameter(alerts)
+        
+        # Prepare payload for external API
+        external_api_payload = {
+            "costing_json": costing_json,
+            "updated_costing_parameter": updated_costing_parameter
+        }
+        
+        # Call external news-decision-accept API
+        external_api_url =  "http://0.0.0.0:8000/api/news-decision-accept"
+        
+        try:
+            response = requests.post(
+                external_api_url,
+                json=external_api_payload,
+                headers={
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                timeout=300
+            )
+            response.raise_for_status()
+            external_response_data = response.json()
+            
+            # Update database with the response data and version control
+            update_result = update_budget_from_external_response(external_response_data, request.user, alert_ids)
+            
+            # Mark processed alerts as accepted
+            updated_alerts_count = alerts.update(is_accept=True, accepted_at=timezone.now())
+            logger.info(f"Marked {updated_alerts_count} alerts as accepted: {alert_ids}")
+            
+        except requests.RequestException as e:
+            logger.error(f"Error calling external API: {str(e)}")
+            return Response({
+                'error': 'Failed to call external news-decision-accept API',
+                'details': str(e),
+                'payload_sent': external_api_payload
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Prepare response data
+        processed_alerts = []
+        for alert in alerts:
+            processed_alerts.append({
+                'alert_id': alert.alert_id,
+                'decision': alert.decision,
+                'category_name': alert.category_name,
+                'item': alert.item,
+                'cost_impact': float(alert.cost_impact) if alert.cost_impact else 0
+            })
+        
+        return Response({
+            'success': True,
+            'message': f'Successfully processed {len(alerts)} alerts, called external API, updated database, and marked alerts as accepted',
+            'processed_alerts_count': len(alerts),
+            'alerts_marked_accepted': updated_alerts_count,
+            'processed_alerts': processed_alerts,
+            'external_api_response': external_response_data,
+            'database_update_summary': update_result,
+            'payload_sent': external_api_payload
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Error in process_news_alerts_and_call_decision_api: {str(e)}")
+        return Response({
+            'error': 'Internal server error',
             'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

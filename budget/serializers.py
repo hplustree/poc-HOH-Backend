@@ -20,7 +20,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Projects
-        fields = ['id', 'name', 'location', 'start_date', 'end_date', 'version_number', 'created_at', 'updated_at', 'costs', 'overheads']
+        fields = ['id', 'name', 'location', 'start_date', 'end_date', 'total_cost', 'version_number', 'created_at', 'updated_at', 'costs', 'overheads']
         read_only_fields = ('version_number', 'created_at', 'updated_at')
 
 class PDFExtractionSerializer(serializers.Serializer):
@@ -65,3 +65,15 @@ class ChatAcceptResponseSerializer(serializers.Serializer):
         if value != 'success':
             raise serializers.ValidationError("API response status is not success")
         return value
+
+
+class CostingJsonSerializer(serializers.Serializer):
+    """Serializer for costing_json data structure"""
+    project = serializers.DictField()
+    cost_line_items = serializers.ListField(child=serializers.DictField())
+    overheads = serializers.ListField(child=serializers.DictField())
+
+
+class LatestCostingResponseSerializer(serializers.Serializer):
+    """Serializer for latest costing API response"""
+    costing_json = CostingJsonSerializer()

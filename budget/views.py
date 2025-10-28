@@ -4,9 +4,10 @@ from rest_framework import status
 from django.db import transaction
 from django.utils import timezone
 from .models import Projects, ProjectCosts, ProjectOverheads
-from .serializers import PDFExtractionSerializer, ProjectSerializer, ChatAcceptRequestSerializer, ChatAcceptResponseSerializer
+from .serializers import PDFExtractionSerializer, ProjectSerializer, ChatAcceptRequestSerializer, ChatAcceptResponseSerializer, CostingJsonSerializer, LatestCostingResponseSerializer
 from rest_framework.permissions import IsAuthenticated
 from chatapp.models import Messages
+from chatapp.utils import generate_costing_json_from_db
 import logging
 import requests
 import json
@@ -47,15 +48,19 @@ class PDFExtractionView(APIView):
                         'location': project_data.get('location'),
                         'start_date': project_data.get('start_date'),
                         'end_date': project_data.get('end_date'),
-                        '_changed_by': f"PDF Import: {filename}",
-                        '_change_reason': 'Created from PDF import' if created else 'Updated from PDF import'
+                        'total_cost': project_data.get('total_cost')
                     }
                 )
+                
+                # Set change tracking attributes after creation/retrieval
+                if created:
+                    project._changed_by = f"PDF Import: {filename}"
+                    project._change_reason = 'Created from PDF import'
                 
                 # If project exists, update it and create a new version if needed
                 if not created:
                     update_fields = {}
-                    tracked_fields = ['location', 'start_date', 'end_date']
+                    tracked_fields = ['location', 'start_date', 'end_date', 'total_cost']
                     
                     for field in tracked_fields:
                         if field in project_data and getattr(project, field) != project_data[field]:
@@ -95,15 +100,16 @@ class PDFExtractionView(APIView):
                             'quantity': item['quantity'],
                             'rate_per_unit': item['rate_per_unit'],
                             'line_total': item['line_total'],
-                            'category_total': item.get('category_total'),
-                            '_changed_by': f"PDF Import: {filename}",
-                            '_change_reason': 'Created from PDF import' if not existing_cost else 'Updated from PDF import'
+                            'category_total': item.get('category_total')
                         }
                         
                         if existing_cost:
                             # Update existing cost item
+                            existing_cost._changed_by = f"PDF Import: {filename}"
+                            existing_cost._change_reason = 'Updated from PDF import'
+                            
                             for field, value in cost_data.items():
-                                if field not in ['project', '_changed_by', '_change_reason']:
+                                if field != 'project':
                                     setattr(existing_cost, field, value)
                             existing_cost.save()
                             
@@ -112,7 +118,9 @@ class PDFExtractionView(APIView):
                                 del existing_costs[existing_cost.id]
                         else:
                             # Create new cost item
-                            ProjectCosts.objects.create(**cost_data)
+                            new_cost = ProjectCosts.objects.create(**cost_data)
+                            new_cost._changed_by = f"PDF Import: {filename}"
+                            new_cost._change_reason = 'Created from PDF import'
                     
                     # Delete any cost items that were not in the import
                     for cost_to_delete in existing_costs.values():
@@ -137,15 +145,16 @@ class PDFExtractionView(APIView):
                             'description': item.get('description'),
                             'basis': item.get('basis'),
                             'percentage': item['percentage'],
-                            'amount': item['amount'],
-                            '_changed_by': f"PDF Import: {filename}",
-                            '_change_reason': 'Created from PDF import' if not existing_overhead else 'Updated from PDF import'
+                            'amount': item['amount']
                         }
                         
                         if existing_overhead:
                             # Update existing overhead
+                            existing_overhead._changed_by = f"PDF Import: {filename}"
+                            existing_overhead._change_reason = 'Updated from PDF import'
+                            
                             for field, value in overhead_data.items():
-                                if field not in ['project', '_changed_by', '_change_reason']:
+                                if field != 'project':
                                     setattr(existing_overhead, field, value)
                             existing_overhead.save()
                             
@@ -154,7 +163,9 @@ class PDFExtractionView(APIView):
                                 del existing_overheads[existing_overhead.id]
                         else:
                             # Create new overhead
-                            ProjectOverheads.objects.create(**overhead_data)
+                            new_overhead = ProjectOverheads.objects.create(**overhead_data)
+                            new_overhead._changed_by = f"PDF Import: {filename}"
+                            new_overhead._change_reason = 'Created from PDF import'
                     
                     # Delete any overheads that were not in the import
                     for overhead_to_delete in existing_overheads.values():
@@ -251,7 +262,6 @@ class ChatAcceptView(APIView):
             
             # Extract the actual costing_json from the nested structure for 'accept' approval
             costing_json = costing_data.get('data', costing_data)
-            
             # Call the external chatbot decision accept API
             api_response = call_chatbot_decision_accept_api(approval, costing_json)
             
@@ -320,6 +330,7 @@ class ChatAcceptView(APIView):
                         'location': project_data.get('location'),
                         'start_date': project_data.get('start_date'),
                         'end_date': project_data.get('end_date'),
+                        'total_cost': project_data.get('total_cost'),
                         '_changed_by': f'chat_accept_{user.username}',
                         '_change_reason': 'Updated from chat accept API'
                     }
@@ -328,7 +339,7 @@ class ChatAcceptView(APIView):
                 # If project exists, update it with version control
                 if not created:
                     update_fields = {}
-                    tracked_fields = ['location', 'start_date', 'end_date']
+                    tracked_fields = ['location', 'start_date', 'end_date', 'total_cost']
                     
                     for field in tracked_fields:
                         if field in project_data and getattr(project, field) != project_data[field]:
@@ -423,5 +434,56 @@ class ChatAcceptView(APIView):
                 logger.info(f"Budget updated successfully for project: {project.name}")
                 
         except Exception as e:
-            logger.error(f"Error updating budget with version control: {str(e)}", exc_info=True)
+            logger.error(f"Error updating budget with version control: {str(e)}")
             raise
+
+
+class LatestCostingView(APIView):
+    """
+    API endpoint to fetch latest costing_json data in the exact format required.
+    Supports both latest project and specific project by ID.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, project_id=None, format=None):
+        """
+        GET /api/budget/api/latest-costing/ - Latest project costing data
+        GET /api/budget/api/latest-costing/{project_id}/ - Specific project costing data
+        """
+        try:
+            # Get costing data using the unified function
+            costing_data = generate_costing_json_from_db(
+                project_id=project_id, 
+                include_wrapper=False
+            )
+            
+            # Handle error cases
+            if costing_data.get("status") == "error":
+                return Response({
+                    'error': 'Project not found or no costing data available',
+                    'message': costing_data.get('message', 'Unknown error')
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Wrap in the expected response format
+            response_data = {
+                "costing_json": costing_data
+            }
+            
+            # Validate response
+            serializer = LatestCostingResponseSerializer(data=response_data)
+            if not serializer.is_valid():
+                logger.error(f"Invalid costing data structure: {serializer.errors}")
+                return Response({
+                    'error': 'Invalid costing data structure',
+                    'details': serializer.errors
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            logger.info(f"Successfully retrieved costing data for project_id: {project_id or 'latest'}")
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error fetching latest costing data: {str(e)}")
+            return Response({
+                'error': 'Internal server error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

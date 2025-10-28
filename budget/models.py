@@ -19,6 +19,7 @@ class Projects(models.Model):
     location = models.CharField(max_length=255, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
+    total_cost = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     version_number = models.IntegerField(default=1)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -44,7 +45,7 @@ class Projects(models.Model):
             original = Projects.objects.get(pk=self.pk)
             
             # Check if tracked fields have changed
-            tracked_fields = ['name', 'location', 'start_date', 'end_date']
+            tracked_fields = ['name', 'location', 'start_date', 'end_date', 'total_cost']
             has_changes = any(
                 getattr(self, field) != getattr(original, field) 
                 for field in tracked_fields
@@ -58,6 +59,7 @@ class Projects(models.Model):
                     location=original.location,
                     start_date=original.start_date,
                     end_date=original.end_date,
+                    total_cost=original.total_cost,
                     version_number=original.version_number,
                     changed_by=getattr(self, '_changed_by', 'system'),
                     change_reason=getattr(self, '_change_reason', 'Updated'),
@@ -78,6 +80,7 @@ class ProjectVersion(VersionNumber):
     location = models.CharField(max_length=255, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
+    total_cost = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     version_number = models.IntegerField()
     change_reason = models.CharField(max_length=255, blank=True, null=True)
 

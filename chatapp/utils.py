@@ -1,41 +1,44 @@
+from budget.models import Projects, ProjectCosts, ProjectOverheads
+from chatapp.models import Session, Conversation, Messages, UpdatedCost
+from news.models import Alert
+from collections import defaultdict
 import requests
 import json
-from django.conf import settings
-from django.utils import timezone
-from .models import Session, Conversation, Messages, UpdatedCost
-from budget.models import Projects, ProjectCosts
-from news.models import Alert
 
 
-def get_project_costing_json(project_id):
+def generate_costing_json_from_db(project_id=None, include_wrapper=False):
     """
-    Build costing JSON from project data in the database matching the required format
+    Unified function to generate costing_json from database with latest data.
+    
+    Args:
+        project_id: Specific project ID, if None uses latest project
+        include_wrapper: If True, returns {"status": "success", "data": {...}}, 
+                        if False returns direct format {"project": {...}, ...}
+    
+    Returns:
+        Dictionary with costing_json structure
     """
     try:
-        project = Projects.objects.get(id=project_id)
-        project_costs = ProjectCosts.objects.filter(project=project)
+        # Get project - either specific or latest
+        if project_id:
+            project = Projects.objects.get(id=project_id)
+        else:
+            project = Projects.objects.order_by('-updated_at').first()
+            
+        if not project:
+            return {"status": "error", "message": "No project found"}
         
-        # Build the costing JSON structure matching the required format
-        costing_json = {
-            "status": "success",
-            "source": f"{project.name}_project_data.pdf",
-            "data": {
-                "project": {
-                    "name": project.name,
-                    "location": project.location or "",
-                    "total_cost": 0,  # Will be calculated
-                    "start_date": project.start_date.isoformat() if project.start_date else None,
-                    "end_date": project.end_date.isoformat() if project.end_date else None
-                },
-                "cost_line_items": [],
-                "overheads": []
-            }
-        }
+        # Get all cost line items for this project
+        project_costs = ProjectCosts.objects.filter(project=project).order_by('category_code', 'id')
         
-        total_cost = 0
-        category_totals = {}
+        # Calculate category totals properly
+        category_totals = defaultdict(float)
+        cost_line_items = []
         
-        # Process cost line items
+        for cost in project_costs:
+            category_totals[cost.category_code] += float(cost.line_total)
+        
+        # Build cost line items with correct category totals
         for cost in project_costs:
             line_item = {
                 "category_code": cost.category_code,
@@ -46,51 +49,87 @@ def get_project_costing_json(project_id):
                 "quantity": float(cost.quantity),
                 "rate_per_unit": float(cost.rate_per_unit),
                 "line_total": float(cost.line_total),
-                "category_total": float(cost.category_total) if cost.category_total else float(cost.line_total)
+                "category_total": category_totals[cost.category_code]
             }
-            costing_json["data"]["cost_line_items"].append(line_item)
-            total_cost += float(cost.line_total)
-            
-            # Track category totals
-            if cost.category_name not in category_totals:
-                category_totals[cost.category_name] = 0
-            category_totals[cost.category_name] += float(cost.line_total)
+            cost_line_items.append(line_item)
         
-        # Add default overheads if none exist
-        if hasattr(project, 'overheads') and project.overheads.exists():
-            for overhead in project.overheads.all():
-                overhead_item = {
+        # Get overheads for this project
+        overheads = []
+        project_overheads = ProjectOverheads.objects.filter(project=project)
+        
+        if project_overheads.exists():
+            for overhead in project_overheads:
+                overheads.append({
                     "overhead_type": overhead.overhead_type,
-                    "description": overhead.description or "",
-                    "basis": overhead.basis or "On subtotal",
+                    "description": overhead.description or "Provided in your BOQ",
+                    "basis": overhead.basis or "On total cost",
                     "percentage": float(overhead.percentage),
                     "amount": float(overhead.amount)
-                }
-                costing_json["data"]["overheads"].append(overhead_item)
+                })
         else:
-            # Add default overheads
-            costing_json["data"]["overheads"] = [
+            # Add default overheads if none exist
+            subtotal = sum(float(cost.line_total) for cost in project_costs)
+            overheads = [
                 {
                     "overhead_type": "Contingency",
                     "description": "Provided in your BOQ",
-                    "basis": "On subtotal",
-                    "percentage": 6.95,
-                    "amount": total_cost * 0.0695
+                    "basis": "On total cost",
+                    "percentage": 10.0,
+                    "amount": round(subtotal * 0.10, 2)
                 },
                 {
                     "overhead_type": "Contractor Margin",
-                    "description": "Provided in your BOQ", 
-                    "basis": "On subtotal",
-                    "percentage": 10,
-                    "amount": total_cost * 0.10
+                    "description": "Provided in your BOQ",
+                    "basis": "On total cost",
+                    "percentage": 10.0,
+                    "amount": round(subtotal * 0.10, 2)
                 }
             ]
         
-        costing_json["data"]["project"]["total_cost"] = total_cost
-        return costing_json
+        # Calculate total cost
+        subtotal = sum(item["line_total"] for item in cost_line_items)
+        overhead_total = sum(item["amount"] for item in overheads)
+        total_cost = subtotal + overhead_total
         
+        # Use stored total_cost if available, otherwise use calculated
+        if project.total_cost is not None:
+            total_cost = float(project.total_cost)
+        
+        # Build the costing data
+        costing_data = {
+            "project": {
+                "name": project.name,
+                "location": project.location or "",
+                "total_cost": int(total_cost),
+                "start_date": project.start_date.isoformat() if project.start_date else None,
+                "end_date": project.end_date.isoformat() if project.end_date else None
+            },
+            "cost_line_items": cost_line_items,
+            "overheads": overheads
+        }
+        
+        # Return with or without wrapper based on parameter
+        if include_wrapper:
+            return {
+                "status": "success",
+                "source": f"{project.name}_project_data.pdf",
+                "data": costing_data
+            }
+        else:
+            return costing_data
+            
     except Projects.DoesNotExist:
         return {"status": "error", "message": "Project not found"}
+    except Exception as e:
+        return {"status": "error", "message": f"Error generating costing data: {str(e)}"}
+
+
+def get_project_costing_json(project_id):
+    """
+    Build costing JSON from project data in the database matching the required format.
+    This function maintains backward compatibility by returning the wrapped format.
+    """
+    return generate_costing_json_from_db(project_id=project_id, include_wrapper=True)
 
 
 def get_previous_chat_history(conversation_id, limit=10):
@@ -172,7 +211,6 @@ def build_api_payload(question, session_id, conversation_id=None):
         
         # Get costing JSON from project data
         costing_json = get_project_costing_json(project_id)
-        
         # Get previous chat history if conversation exists
         previous_chat = {}
         if conversation_id:
