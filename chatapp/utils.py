@@ -339,3 +339,64 @@ def save_updated_cost_to_db(conversation_id, message_id, costing_data, raw_respo
         raise ValueError(f"Database record not found: {str(e)}")
     except Exception as e:
         raise ValueError(f"Error saving updated cost: {str(e)}")
+
+
+def get_user_latest_chat_info(user_detail):
+    """
+    Get the latest project_id, session_id, and conversation_id for a user
+    
+    Args:
+        user_detail: UserDetail instance
+        
+    Returns:
+        Dictionary with latest chat information or None if no data exists
+    """
+    try:
+        # Get the latest active session for the user
+        latest_session = Session.objects.filter(
+            user_id=user_detail,
+            is_active=True
+        ).order_by('-updated_at').first()
+        
+        if not latest_session:
+            # No active session found, try to get any session
+            latest_session = Session.objects.filter(
+                user_id=user_detail
+            ).order_by('-updated_at').first()
+            
+            if not latest_session:
+                return {
+                    "chat_info_available": False,
+                    "message": "No chat sessions found for user"
+                }
+        
+        # Get the latest conversation for this session
+        latest_conversation = Conversation.objects.filter(
+            session=latest_session
+        ).order_by('-conversation_id').first()
+        
+        if not latest_conversation:
+            return {
+                "chat_info_available": False,
+                "message": "No conversations found for user session"
+            }
+        
+        # Get the latest project (fallback if session project is not available)
+        latest_project = Projects.objects.order_by('-updated_at').first()
+        
+        return {
+            "chat_info_available": True,
+            "project_id": latest_session.project_id.id,
+            "session_id": latest_session.session_id,
+            "conversation_id": latest_conversation.conversation_id,
+            "project_name": latest_session.project_id.name,
+            "project_location": latest_session.project_id.location,
+            "session_is_active": latest_session.is_active,
+            "latest_project_id": latest_project.id if latest_project else None
+        }
+        
+    except Exception as e:
+        return {
+            "chat_info_available": False,
+            "error": f"Error fetching chat information: {str(e)}"
+        }

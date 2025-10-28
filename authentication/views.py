@@ -9,6 +9,7 @@ from .serializers import (
     UserDetailRegistrationSerializer, UserDetailLoginSerializer, 
     OTPVerificationSerializer, UserDetailSerializer
 )
+from chatapp.utils import get_user_latest_chat_info
 
 # UserDetail Registration with OTP
 @api_view(['POST'])
@@ -56,15 +57,21 @@ def user_detail_login_view(request):
                 last_name=user_detail.last_name
             )
         
+        # Get latest chat information for the user
+        chat_info = get_user_latest_chat_info(user_detail)
+        
         refresh = RefreshToken.for_user(user)
-        return Response({
+        response_data = {
             'message': 'Login successful',
             'user': UserDetailSerializer(user_detail).data,
             'tokens': {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-            }
-        }, status=status.HTTP_200_OK)
+            },
+            'chat_info': chat_info
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
