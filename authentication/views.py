@@ -9,7 +9,7 @@ from .serializers import (
     UserDetailRegistrationSerializer, UserDetailLoginSerializer, 
     OTPVerificationSerializer, UserDetailSerializer
 )
-from chatapp.utils import get_user_latest_chat_info
+from chatapp.utils import get_user_latest_chat_info, create_session_and_conversation_if_projects_exist
 
 # UserDetail Registration with OTP
 @api_view(['POST'])
@@ -18,14 +18,21 @@ def user_detail_register_view(request):
     serializer = UserDetailRegistrationSerializer(data=request.data)
     if serializer.is_valid():
         user_detail = serializer.save()
+        
+        # Automatically create session and conversation if projects exist
+        chat_setup = create_session_and_conversation_if_projects_exist(user_detail)
+        
         # TODO: Send OTP via email/SMS service instead of returning it
         # TEMPORARY: Return OTP for testing (remove in production)
-        return Response({
+        response_data = {
             'message': 'User registered successfully. OTP sent for verification.',
             'user': UserDetailSerializer(user_detail).data,
             'otp': user_detail.otp,  # For testing only
-            'otp_expires_in': '80 seconds'
-        }, status=status.HTTP_201_CREATED)
+            'otp_expires_in': '80 seconds',
+            'chat_setup': chat_setup
+        }
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])

@@ -277,9 +277,19 @@ def save_message_to_db(conversation_id, sender_id, message_type, content, metada
     try:
         conversation = Conversation.objects.get(conversation_id=conversation_id)
         
+        # Get sender object if sender_id is provided
+        sender = None
+        if sender_id:
+            from authentication.models import UserDetail
+            try:
+                sender = UserDetail.objects.get(id=sender_id)
+            except UserDetail.DoesNotExist:
+                pass
+        
         message = Messages.objects.create(
             conversation=conversation,
-            sender_id=sender_id if sender_id else None,
+            session=conversation.session,  # Auto-populate session from conversation
+            sender=sender,
             message_type=message_type,
             content=content,
             metadata=metadata or {}
@@ -339,6 +349,227 @@ def save_updated_cost_to_db(conversation_id, message_id, costing_data, raw_respo
         raise ValueError(f"Database record not found: {str(e)}")
     except Exception as e:
         raise ValueError(f"Error saving updated cost: {str(e)}")
+
+
+def create_session_and_conversation_if_projects_exist(user_detail):
+    """
+    Create session and conversation for new user if projects exist
+    
+    Args:
+        user_detail: UserDetail instance
+        
+    Returns:
+        Dictionary with session creation results
+    """
+    try:
+        from django.utils import timezone
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        logger.info(f"Starting session creation for user: {user_detail.email}")
+        
+        # Check if any projects exist
+        if not Projects.objects.exists():
+            logger.warning("No projects exist in the system")
+            return {
+                "session_created": False,
+                "projects_exist": False,
+                "error": "No projects exist in the system. Session and conversation cannot be created."
+            }
+        
+        # Get the first available project (ordered by updated_at)
+        project = Projects.objects.order_by('-updated_at').first()
+        logger.info(f"Using project: {project.name} (ID: {project.id})")
+        
+        # Check if user already has a session for this project
+        existing_session = Session.objects.filter(
+            user_id=user_detail,
+            project_id=project
+        ).first()
+        
+        if existing_session:
+            logger.info(f"Session already exists for user {user_detail.email} and project {project.name}")
+            # Get or create conversation for existing session
+            conversation = Conversation.objects.filter(session=existing_session).first()
+            if not conversation:
+                conversation = Conversation.objects.create(
+                    session=existing_session,
+                    project_id=project
+                )
+                logger.info(f"Created new conversation {conversation.conversation_id} for existing session")
+            
+            return {
+                "session_created": True,
+                "session_id": existing_session.session_id,
+                "conversation_id": conversation.conversation_id,
+                "projects_exist": True,
+                "project_used": {
+                    "id": project.id,
+                    "name": project.name,
+                    "location": project.location or ""
+                }
+            }
+        
+        # Create new session
+        session = Session.objects.create(
+            project_id=project,
+            user_id=user_detail,
+            is_active=True
+        )
+        logger.info(f"Created session {session.session_id} for user {user_detail.email}")
+        
+        # Create conversation for the session
+        conversation = Conversation.objects.create(
+            session=session,
+            project_id=project
+        )
+        logger.info(f"Created conversation {conversation.conversation_id} for session {session.session_id}")
+        
+        # Create welcome message
+        welcome_message = f"Welcome to {project.name}! I'm your AI assistant ready to help you with project-related questions and cost management."
+        
+        message = Messages.objects.create(
+            conversation=conversation,
+            session=session,
+            sender=None,  # AI message
+            message_type='assistant',
+            content=welcome_message,
+            metadata={
+                'welcome_message': True,
+                'project_info': {
+                    'name': project.name,
+                    'location': project.location
+                }
+            }
+        )
+        logger.info(f"Created welcome message for conversation {conversation.conversation_id}")
+        
+        return {
+            "session_created": True,
+            "session_id": session.session_id,
+            "conversation_id": conversation.conversation_id,
+            "projects_exist": True,
+            "project_used": {
+                "id": project.id,
+                "name": project.name,
+                "location": project.location or ""
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating session for user {user_detail.email}: {str(e)}")
+        return {
+            "session_created": False,
+            "projects_exist": True,
+            "error": f"Failed to create session: {str(e)}"
+        }
+
+
+def create_sessions_for_all_users_on_project_creation(project):
+    """
+    Create sessions for all verified and active users when new project is created
+    
+    Args:
+        project: Projects instance
+        
+    Returns:
+        Dictionary with session creation statistics
+    """
+    try:
+        from authentication.models import UserDetail
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        logger.info(f"Starting session creation for all users for project: {project.name}")
+        
+        # Get all verified and active users
+        users = UserDetail.objects.filter(
+            is_verified=True,
+            is_active=True
+        )
+        
+        logger.info(f"Found {users.count()} verified and active users")
+        
+        users_processed = 0
+        sessions_created = 0
+        conversations_created = 0
+        errors = []
+        
+        for user in users:
+            try:
+                logger.info(f"Processing user: {user.email} (ID: {user.id})")
+                
+                # Check if user already has a session for this project
+                existing_session = Session.objects.filter(
+                    user_id=user,
+                    project_id=project
+                ).first()
+                
+                if existing_session:
+                    logger.info(f"Session already exists for user {user.email} and project {project.name}")
+                    users_processed += 1
+                    continue
+                
+                # Create new session
+                session = Session.objects.create(
+                    project_id=project,
+                    user_id=user,
+                    is_active=True
+                )
+                sessions_created += 1
+                logger.info(f"Created session {session.session_id} for user {user.email}")
+                
+                # Create conversation for the session
+                conversation = Conversation.objects.create(
+                    session=session,
+                    project_id=project
+                )
+                conversations_created += 1
+                logger.info(f"Created conversation {conversation.conversation_id} for session {session.session_id}")
+                
+                # Create welcome message about new project
+                welcome_message = f"A new project '{project.name}' has been added to the system. I'm ready to assist you with questions about this project."
+                
+                message = Messages.objects.create(
+                    conversation=conversation,
+                    session=session,
+                    sender=None,  # AI message
+                    message_type='assistant',
+                    content=welcome_message,
+                    metadata={
+                        'project_creation_notification': True,
+                        'project_info': {
+                            'name': project.name,
+                            'location': project.location
+                        }
+                    }
+                )
+                logger.info(f"Created welcome message for user {user.email}")
+                
+                users_processed += 1
+                
+            except Exception as e:
+                error_msg = f"Failed to create session for user {user.email}: {str(e)}"
+                logger.error(error_msg)
+                errors.append(error_msg)
+                users_processed += 1
+        
+        logger.info(f"Session creation completed. Users: {users_processed}, Sessions: {sessions_created}, Conversations: {conversations_created}")
+        
+        return {
+            "success": True,
+            "users_processed": users_processed,
+            "sessions_created": sessions_created,
+            "conversations_created": conversations_created,
+            "errors": errors
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in bulk session creation for project {project.name}: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Failed to create sessions: {str(e)}"
+        }
 
 
 def get_user_latest_chat_info(user_detail):

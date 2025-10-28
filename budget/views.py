@@ -8,9 +8,10 @@ from .serializers import PDFExtractionSerializer, ProjectSerializer, ChatAcceptR
 from rest_framework.permissions import IsAuthenticated
 from chatapp.models import Session, Conversation
 from authentication.models import UserDetail
-from chatapp.utils import generate_costing_json_from_db
+from chatapp.utils import generate_costing_json_from_db, create_sessions_for_all_users_on_project_creation
 import logging
 import json
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -171,69 +172,40 @@ class PDFExtractionView(APIView):
                     for overhead_to_delete in existing_overheads.values():
                         overhead_to_delete.delete()
                 
-                # Create chat session and conversation for the user and project
+                # Create sessions for all users if this is a new project
+                session_creation_result = None
+                if created:
+                    try:
+                        logger.info(f"New project created: {project.name}. Creating sessions for all users.")
+                        session_creation_result = create_sessions_for_all_users_on_project_creation(project)
+                        logger.info(f"Session creation completed: {session_creation_result}")
+                    except Exception as session_error:
+                        logger.error(f"Error creating sessions for all users: {str(session_error)}", exc_info=True)
+                        session_creation_result = {
+                            "success": False,
+                            "error": f"Failed to create sessions: {str(session_error)}"
+                        }
+                
+                # Get current user's session info for response
+                session_created = False
+                session_id = None
+                conversation_id = None
                 try:
-                    # Get UserDetail instance from the authenticated user's email
                     user_detail = UserDetail.objects.filter(email=request.user.email).first()
-                    
-                    if not user_detail:
-                        logger.warning(f"UserDetail not found for email: {request.user.email}")
-                        session_created = False
-                        session_id = None
-                        conversation_id = None
-                    else:
-                        # Check if session already exists for this user and project
-                        existing_session = Session.objects.filter(
+                    if user_detail:
+                        user_session = Session.objects.filter(
                             user_id=user_detail,
                             project_id=project
                         ).first()
-                        
-                        if not existing_session:
-                            # Create new chat session
-                            chat_session = Session.objects.create(
-                                project_id=project,
-                                user_id=user_detail,
-                                is_active=True  # Keep the session active
-                            )
-                            logger.info(f"Created chat session {chat_session.session_id} for user {user_detail.id} and project {project.id}")
-                            
-                            # Create conversation for the session
-                            conversation = Conversation.objects.create(
-                                session=chat_session,
-                                project_id=project
-                            )
-                            logger.info(f"Created conversation {conversation.conversation_id} for session {chat_session.session_id}")
-                            
+                        if user_session:
+                            session_id = user_session.session_id
                             session_created = True
-                            session_id = chat_session.session_id
-                            conversation_id = conversation.conversation_id
-                        else:
-                            logger.info(f"Chat session already exists for user {user_detail.id} and project {project.id}")
-                            # Check if conversation exists for this session
-                            existing_conversation = Conversation.objects.filter(
-                                session=existing_session,
-                                project_id=project
-                            ).first()
-                            
-                            if not existing_conversation:
-                                # Create conversation for existing session
-                                conversation = Conversation.objects.create(
-                                    session=existing_session,
-                                    project_id=project
-                                )
-                                logger.info(f"Created conversation {conversation.conversation_id} for existing session {existing_session.session_id}")
+                            # Get conversation for this session
+                            conversation = Conversation.objects.filter(session=user_session).first()
+                            if conversation:
                                 conversation_id = conversation.conversation_id
-                            else:
-                                conversation_id = existing_conversation.conversation_id
-                            
-                            session_created = False
-                            session_id = existing_session.session_id
-                        
-                except Exception as session_error:
-                    logger.error(f"Error creating chat session/conversation: {str(session_error)}", exc_info=True)
-                    session_created = False
-                    session_id = None
-                    conversation_id = None
+                except Exception as e:
+                    logger.error(f"Error getting user session info: {str(e)}")
                 
                 # Return the updated project with all related data
                 project_serializer = ProjectSerializer(instance=project)
@@ -247,6 +219,10 @@ class PDFExtractionView(APIView):
                         'conversation_id': conversation_id
                     }
                 }
+                
+                # Include session creation results for new projects
+                if created and session_creation_result:
+                    response_data['session_creation'] = session_creation_result
                 
                 return Response(response_data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
                 
