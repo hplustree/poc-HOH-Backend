@@ -3,10 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
+from decimal import Decimal
 from .models import Projects, ProjectCosts, ProjectOverheads
 from .serializers import PDFExtractionSerializer, ProjectSerializer, ChatAcceptRequestSerializer, ChatAcceptResponseSerializer, CostingJsonSerializer, LatestCostingResponseSerializer
 from rest_framework.permissions import IsAuthenticated
-from chatapp.models import Session, Conversation
+from chatapp.models import Session, Conversation, Messages
 from authentication.models import UserDetail
 from chatapp.utils import generate_costing_json_from_db, create_sessions_for_all_users_on_project_creation
 import logging
@@ -377,9 +378,7 @@ class ChatAcceptView(APIView):
                         'location': project_data.get('location'),
                         'start_date': project_data.get('start_date'),
                         'end_date': project_data.get('end_date'),
-                        'total_cost': project_data.get('total_cost'),
-                        '_changed_by': f'chat_accept_{user.username}',
-                        '_change_reason': 'Updated from chat accept API'
+                        'total_cost': project_data.get('total_cost')
                     }
                 )
                 
@@ -388,20 +387,45 @@ class ChatAcceptView(APIView):
                     update_fields = {}
                     tracked_fields = ['location', 'start_date', 'end_date', 'total_cost']
                     
+                    # Convert total_cost to proper type for comparison
+                    project_total_cost = project_data.get('total_cost')
+                    if project_total_cost is not None:
+                        project_total_cost = Decimal(str(project_total_cost))
+                    
+                    # Check each field for changes
                     for field in tracked_fields:
-                        if field in project_data and getattr(project, field) != project_data[field]:
-                            update_fields[field] = project_data[field]
+                        if field in project_data:
+                            current_value = getattr(project, field)
+                            new_value = project_data[field]
+                            
+                            # Special handling for total_cost (Decimal field)
+                            if field == 'total_cost' and new_value is not None:
+                                new_value = Decimal(str(new_value))
+                            
+                            if current_value != new_value:
+                                update_fields[field] = new_value
+                                logger.info(f"Project field '{field}' changed from {current_value} to {new_value}")
                     
                     if update_fields:
+                        # Set change tracking attributes BEFORE updating fields
                         project._changed_by = f'chat_accept_{user.username}'
                         project._change_reason = 'Updated from chat accept API'
                         
+                        # Update fields
                         for field, value in update_fields.items():
                             setattr(project, field, value)
+                        
+                        logger.info(f"Saving project with version control: {update_fields}")
                         project.save()
+                        logger.info(f"Project version updated to: {project.version_number}")
+                    else:
+                        logger.info("No project fields changed, skipping version control")
+                else:
+                    logger.info(f"New project created: {project.name}")
                 
                 # Update project costs with version control
                 if cost_items:
+                    logger.info(f"Processing {len(cost_items)} cost items")
                     for item in cost_items:
                         # Find existing cost item
                         existing_costs = ProjectCosts.objects.filter(
@@ -414,38 +438,65 @@ class ChatAcceptView(APIView):
                             # Update existing cost item with version control
                             existing_cost = existing_costs.first()
                             
-                            # Set change tracking attributes
-                            existing_cost._changed_by = f'chat_accept_{user.username}'
-                            existing_cost._change_reason = 'Updated from chat accept API'
+                            # Check if any tracked fields have changed
+                            changes_detected = False
+                            tracked_fields = ['quantity', 'rate_per_unit', 'supplier_brand', 'category_total']
                             
-                            # Update fields
-                            existing_cost.quantity = item.get('quantity', existing_cost.quantity)
-                            existing_cost.rate_per_unit = item.get('rate_per_unit', existing_cost.rate_per_unit)
-                            existing_cost.supplier_brand = item.get('supplier_brand', existing_cost.supplier_brand)
-                            existing_cost.category_total = item.get('category_total', existing_cost.category_total)
-                            existing_cost.unit = item.get('unit', existing_cost.unit)
-                            existing_cost.category_name = item.get('category_name', existing_cost.category_name)
+                            for field in tracked_fields:
+                                if field in item:
+                                    current_value = getattr(existing_cost, field)
+                                    new_value = item[field]
+                                    
+                                    # Convert to Decimal for numeric fields
+                                    if field in ['quantity', 'rate_per_unit', 'category_total'] and new_value is not None:
+                                        new_value = Decimal(str(new_value))
+                                    
+                                    if current_value != new_value:
+                                        changes_detected = True
+                                        logger.info(f"Cost item '{field}' changed from {current_value} to {new_value}")
+                                        break
                             
-                            existing_cost.save()
+                            if changes_detected:
+                                # Set change tracking attributes BEFORE updating
+                                existing_cost._changed_by = f'chat_accept_{user.username}'
+                                existing_cost._change_reason = 'Updated from chat accept API'
+                                
+                                # Update fields
+                                existing_cost.quantity = Decimal(str(item.get('quantity', existing_cost.quantity)))
+                                existing_cost.rate_per_unit = Decimal(str(item.get('rate_per_unit', existing_cost.rate_per_unit)))
+                                existing_cost.supplier_brand = item.get('supplier_brand', existing_cost.supplier_brand)
+                                if item.get('category_total') is not None:
+                                    existing_cost.category_total = Decimal(str(item.get('category_total')))
+                                existing_cost.unit = item.get('unit', existing_cost.unit)
+                                existing_cost.category_name = item.get('category_name', existing_cost.category_name)
+                                
+                                logger.info(f"Saving cost item with version control: {existing_cost.item_description}")
+                                existing_cost.save()
+                                logger.info(f"Cost item version updated to: {existing_cost.version_number}")
+                            else:
+                                logger.info(f"No changes detected for cost item: {existing_cost.item_description}")
                         else:
                             # Create new cost item
-                            ProjectCosts.objects.create(
+                            logger.info(f"Creating new cost item: {item.get('item_description')}")
+                            new_cost = ProjectCosts.objects.create(
                                 project=project,
                                 category_code=item.get('category_code'),
                                 category_name=item.get('category_name'),
                                 item_description=item.get('item_description'),
                                 supplier_brand=item.get('supplier_brand'),
                                 unit=item.get('unit'),
-                                quantity=item.get('quantity', 0),
-                                rate_per_unit=item.get('rate_per_unit', 0),
-                                line_total=item.get('line_total', 0),
-                                category_total=item.get('category_total'),
-                                _changed_by=f'chat_accept_{user.username}',
-                                _change_reason='Created from chat accept API'
+                                quantity=Decimal(str(item.get('quantity', 0))),
+                                rate_per_unit=Decimal(str(item.get('rate_per_unit', 0))),
+                                line_total=Decimal(str(item.get('line_total', 0))),
+                                category_total=Decimal(str(item.get('category_total', 0))) if item.get('category_total') is not None else None
                             )
+                            # Set change tracking for new items (though not used in version control for new items)
+                            new_cost._changed_by = f'chat_accept_{user.username}'
+                            new_cost._change_reason = 'Created from chat accept API'
                 
                 # Update project overheads with version control
                 if overhead_items:
+                    logger.info(f"Processing {len(overhead_items)} overhead items")
                     for item in overhead_items:
                         existing_overheads = ProjectOverheads.objects.filter(
                             project=project,
@@ -456,27 +507,56 @@ class ChatAcceptView(APIView):
                             # Update existing overhead with version control
                             existing_overhead = existing_overheads.first()
                             
-                            existing_overhead._changed_by = f'chat_accept_{user.username}'
-                            existing_overhead._change_reason = 'Updated from chat accept API'
+                            # Check if any tracked fields have changed
+                            changes_detected = False
+                            tracked_fields = ['percentage', 'amount', 'overhead_type', 'description']
                             
-                            existing_overhead.description = item.get('description', existing_overhead.description)
-                            existing_overhead.basis = item.get('basis', existing_overhead.basis)
-                            existing_overhead.percentage = item.get('percentage', existing_overhead.percentage)
-                            existing_overhead.amount = item.get('amount', existing_overhead.amount)
+                            for field in tracked_fields:
+                                if field in item:
+                                    current_value = getattr(existing_overhead, field)
+                                    new_value = item[field]
+                                    
+                                    # Convert to Decimal for numeric fields
+                                    if field in ['percentage', 'amount'] and new_value is not None:
+                                        new_value = Decimal(str(new_value))
+                                    
+                                    if current_value != new_value:
+                                        changes_detected = True
+                                        logger.info(f"Overhead '{field}' changed from {current_value} to {new_value}")
+                                        break
                             
-                            existing_overhead.save()
+                            if changes_detected:
+                                # Set change tracking attributes BEFORE updating
+                                existing_overhead._changed_by = f'chat_accept_{user.username}'
+                                existing_overhead._change_reason = 'Updated from chat accept API'
+                                
+                                # Update fields
+                                existing_overhead.description = item.get('description', existing_overhead.description)
+                                existing_overhead.basis = item.get('basis', existing_overhead.basis)
+                                if item.get('percentage') is not None:
+                                    existing_overhead.percentage = Decimal(str(item.get('percentage')))
+                                if item.get('amount') is not None:
+                                    existing_overhead.amount = Decimal(str(item.get('amount')))
+                                
+                                logger.info(f"Saving overhead with version control: {existing_overhead.overhead_type}")
+                                existing_overhead.save()
+                                logger.info(f"Overhead version updated to: {existing_overhead.version_number}")
+                            else:
+                                logger.info(f"No changes detected for overhead: {existing_overhead.overhead_type}")
                         else:
                             # Create new overhead
-                            ProjectOverheads.objects.create(
+                            logger.info(f"Creating new overhead: {item.get('overhead_type')}")
+                            new_overhead = ProjectOverheads.objects.create(
                                 project=project,
                                 overhead_type=item.get('overhead_type'),
                                 description=item.get('description'),
                                 basis=item.get('basis'),
-                                percentage=item.get('percentage', 0),
-                                amount=item.get('amount', 0),
-                                _changed_by=f'chat_accept_{user.username}',
-                                _change_reason='Created from chat accept API'
+                                percentage=Decimal(str(item.get('percentage', 0))),
+                                amount=Decimal(str(item.get('amount', 0)))
                             )
+                            # Set change tracking for new items (though not used in version control for new items)
+                            new_overhead._changed_by = f'chat_accept_{user.username}'
+                            new_overhead._change_reason = 'Created from chat accept API'
                 
                 logger.info(f"Budget updated successfully for project: {project.name}")
                 
