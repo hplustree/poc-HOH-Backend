@@ -1,15 +1,15 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
-from django.utils import timezone
 from .models import Projects, ProjectCosts, ProjectOverheads
 from .serializers import PDFExtractionSerializer, ProjectSerializer, ChatAcceptRequestSerializer, ChatAcceptResponseSerializer, CostingJsonSerializer, LatestCostingResponseSerializer
 from rest_framework.permissions import IsAuthenticated
-from chatapp.models import Messages
+from chatapp.models import Session
+from authentication.models import UserDetail
 from chatapp.utils import generate_costing_json_from_db
 import logging
-import requests
 import json
 
 logger = logging.getLogger(__name__)
@@ -171,13 +171,55 @@ class PDFExtractionView(APIView):
                     for overhead_to_delete in existing_overheads.values():
                         overhead_to_delete.delete()
                 
+                # Create chat session for the user and project
+                try:
+                    # Get UserDetail instance from the authenticated user's email
+                    user_detail = UserDetail.objects.filter(email=request.user.email).first()
+                    
+                    if not user_detail:
+                        logger.warning(f"UserDetail not found for email: {request.user.email}")
+                        session_created = False
+                        session_id = None
+                    else:
+                        # Check if session already exists for this user and project
+                        existing_session = Session.objects.filter(
+                            user_id=user_detail,
+                            project_id=project
+                        ).first()
+                        
+                        if not existing_session:
+                            # Create new chat session
+                            chat_session = Session.objects.create(
+                                project_id=project,
+                                user_id=user_detail,
+                                is_active=True  # Keep the session active
+                            )
+                            logger.info(f"Created chat session {chat_session.session_id} for user {user_detail.id} and project {project.id}")
+                            session_created = True
+                            session_id = chat_session.session_id
+                        else:
+                            logger.info(f"Chat session already exists for user {user_detail.id} and project {project.id}")
+                            session_created = False
+                            session_id = existing_session.session_id
+                        
+                except Exception as session_error:
+                    logger.error(f"Error creating chat session: {str(session_error)}", exc_info=True)
+                    session_created = False
+                    session_id = None
+                
                 # Return the updated project with all related data
                 project_serializer = ProjectSerializer(instance=project)
-                return Response({
+                response_data = {
                     'status': 'success',
                     'message': 'Project created/updated successfully',
-                    'project': project_serializer.data
-                }, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
+                    'project': project_serializer.data,
+                    'chat_session': {
+                        'created': session_created,
+                        'session_id': session_id
+                    }
+                }
+                
+                return Response(response_data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
                 
         except Exception as e:
             logger.error(f"Error processing PDF import: {str(e)}", exc_info=True)
