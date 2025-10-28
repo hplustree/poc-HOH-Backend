@@ -6,7 +6,7 @@ from django.db import transaction
 from .models import Projects, ProjectCosts, ProjectOverheads
 from .serializers import PDFExtractionSerializer, ProjectSerializer, ChatAcceptRequestSerializer, ChatAcceptResponseSerializer, CostingJsonSerializer, LatestCostingResponseSerializer
 from rest_framework.permissions import IsAuthenticated
-from chatapp.models import Session
+from chatapp.models import Session, Conversation
 from authentication.models import UserDetail
 from chatapp.utils import generate_costing_json_from_db
 import logging
@@ -171,7 +171,7 @@ class PDFExtractionView(APIView):
                     for overhead_to_delete in existing_overheads.values():
                         overhead_to_delete.delete()
                 
-                # Create chat session for the user and project
+                # Create chat session and conversation for the user and project
                 try:
                     # Get UserDetail instance from the authenticated user's email
                     user_detail = UserDetail.objects.filter(email=request.user.email).first()
@@ -180,6 +180,7 @@ class PDFExtractionView(APIView):
                         logger.warning(f"UserDetail not found for email: {request.user.email}")
                         session_created = False
                         session_id = None
+                        conversation_id = None
                     else:
                         # Check if session already exists for this user and project
                         existing_session = Session.objects.filter(
@@ -195,17 +196,44 @@ class PDFExtractionView(APIView):
                                 is_active=True  # Keep the session active
                             )
                             logger.info(f"Created chat session {chat_session.session_id} for user {user_detail.id} and project {project.id}")
+                            
+                            # Create conversation for the session
+                            conversation = Conversation.objects.create(
+                                session=chat_session,
+                                project_id=project
+                            )
+                            logger.info(f"Created conversation {conversation.conversation_id} for session {chat_session.session_id}")
+                            
                             session_created = True
                             session_id = chat_session.session_id
+                            conversation_id = conversation.conversation_id
                         else:
                             logger.info(f"Chat session already exists for user {user_detail.id} and project {project.id}")
+                            # Check if conversation exists for this session
+                            existing_conversation = Conversation.objects.filter(
+                                session=existing_session,
+                                project_id=project
+                            ).first()
+                            
+                            if not existing_conversation:
+                                # Create conversation for existing session
+                                conversation = Conversation.objects.create(
+                                    session=existing_session,
+                                    project_id=project
+                                )
+                                logger.info(f"Created conversation {conversation.conversation_id} for existing session {existing_session.session_id}")
+                                conversation_id = conversation.conversation_id
+                            else:
+                                conversation_id = existing_conversation.conversation_id
+                            
                             session_created = False
                             session_id = existing_session.session_id
                         
                 except Exception as session_error:
-                    logger.error(f"Error creating chat session: {str(session_error)}", exc_info=True)
+                    logger.error(f"Error creating chat session/conversation: {str(session_error)}", exc_info=True)
                     session_created = False
                     session_id = None
+                    conversation_id = None
                 
                 # Return the updated project with all related data
                 project_serializer = ProjectSerializer(instance=project)
@@ -215,7 +243,8 @@ class PDFExtractionView(APIView):
                     'project': project_serializer.data,
                     'chat_session': {
                         'created': session_created,
-                        'session_id': session_id
+                        'session_id': session_id,
+                        'conversation_id': conversation_id
                     }
                 }
                 
