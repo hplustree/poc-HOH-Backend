@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Projects, ProjectCosts, ProjectOverheads
+from .models import Projects, ProjectCosts, ProjectOverheads, ProjectVersion, ProjectCostVersion, ProjectOverheadVersion
 from chatapp.models import Messages
 
 class ProjectCostSerializer(serializers.ModelSerializer):
@@ -77,3 +77,46 @@ class CostingJsonSerializer(serializers.Serializer):
 class LatestCostingResponseSerializer(serializers.Serializer):
     """Serializer for latest costing API response"""
     costing_json = CostingJsonSerializer()
+
+
+class ProjectVersionCostSerializer(serializers.ModelSerializer):
+    """Serializer for project costs in version history"""
+    class Meta:
+        model = ProjectCosts
+        fields = ['id', 'category_code', 'category_name', 'item_description', 'supplier_brand', 
+                 'unit', 'quantity', 'rate_per_unit', 'line_total', 'category_total']
+
+
+class ProjectVersionOverheadSerializer(serializers.ModelSerializer):
+    """Serializer for project overheads in version history"""
+    class Meta:
+        model = ProjectOverheads
+        fields = ['id', 'overhead_type', 'description', 'basis', 'percentage', 'amount']
+
+
+class ProjectVersionHistorySerializer(serializers.Serializer):
+    """Serializer for each project version with its costs and overheads"""
+    version_number = serializers.IntegerField()
+    total_cost = serializers.DecimalField(max_digits=15, decimal_places=2, allow_null=True)
+    timestamp = serializers.DateTimeField()
+    change_reason = serializers.CharField(allow_null=True, allow_blank=True)
+    changed_by = serializers.CharField()
+    project_costs = ProjectVersionCostSerializer(many=True)
+    project_overheads = ProjectVersionOverheadSerializer(many=True)
+
+
+class ProjectDetailSerializer(serializers.ModelSerializer):
+    """Serializer for basic project details"""
+    current_version = serializers.IntegerField(source='version_number')
+    
+    class Meta:
+        model = Projects
+        fields = ['id', 'name', 'location', 'start_date', 'end_date', 'current_version', 'created_at', 'updated_at']
+
+
+class ProjectVersionHistoryResponseSerializer(serializers.Serializer):
+    """Complete response serializer for project version history API"""
+    status = serializers.CharField()
+    message = serializers.CharField()
+    project_detail = ProjectDetailSerializer()
+    project_versions = ProjectVersionHistorySerializer(many=True)

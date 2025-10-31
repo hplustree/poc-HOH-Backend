@@ -55,6 +55,8 @@ class Messages(models.Model):
     content = models.TextField()
     metadata = models.JSONField(default=dict, blank=True)
     is_hide = models.BooleanField(default=False)
+    is_accept = models.BooleanField(default=False, null=True, blank=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -66,6 +68,12 @@ class Messages(models.Model):
     
     def __str__(self):
         return f"Message {self.message_id} - {self.message_type}"
+    
+    def accept_message(self):
+        """Mark message as accepted"""
+        self.is_accept = True
+        self.accepted_at = timezone.now()
+        self.save()
 
 
 class UpdatedCost(models.Model):

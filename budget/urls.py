@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-from .views import PDFExtractionView, ChatAcceptView, LatestCostingView
+from .views import PDFExtractionView, ChatAcceptView, LatestCostingView, ProjectVersionHistoryView
 
 app_name = 'budget'
 
@@ -12,4 +12,6 @@ urlpatterns = [
     # Latest costing data endpoints
     path('api/latest-costing/', LatestCostingView.as_view(), name='latest-costing'),
     path('api/latest-costing/<int:project_id>/', LatestCostingView.as_view(), name='latest-costing-by-id'),
+    # Project version history endpoint
+    path('projects/<int:project_id>/version-history/', ProjectVersionHistoryView.as_view(), name='project-version-history'),
 ]

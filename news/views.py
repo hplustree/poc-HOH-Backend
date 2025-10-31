@@ -34,7 +34,7 @@ def process_single_api_call(api_url, params):
     Helper function to process a single API call and return processed data.
     """
     # Make API request
-    response = requests.get(api_url, params=params, timeout=300)
+    response = requests.get(api_url, params=params, timeout=3000)
     response.raise_for_status()
     
     data = response.json()
@@ -888,7 +888,7 @@ def process_news_alerts_and_call_decision_api(request):
                     'accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                timeout=300
+                timeout=3000
             )
             response.raise_for_status()
             external_response_data = response.json()

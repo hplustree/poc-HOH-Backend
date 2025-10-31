@@ -167,14 +167,14 @@ def get_previous_chat_history(conversation_id, limit=10):
         return {}
 
 
-def get_accepted_decisions():
+def get_accepted_decisions_news():
     """
     Get accepted decisions from Alert model where is_accept = True
     """
     try:
         accepted_alerts = Alert.objects.filter(is_accept=True).order_by('-accepted_at')
         
-        previous_decisions = {}
+        previous_decisions_news = {}
         decision_count = 1
         
         for alert in accepted_alerts:
@@ -191,13 +191,54 @@ def get_accepted_decisions():
                 "cost_impact": float(alert.cost_impact) if alert.cost_impact else 0,
                 "accepted_at": alert.accepted_at.isoformat() if alert.accepted_at else None
             }
-            previous_decisions[str(decision_count)] = decision_data
+            previous_decisions_news[str(decision_count)] = decision_data
             decision_count += 1
         
-        return previous_decisions
+        return previous_decisions_news
         
     except Exception as e:
         print(f"Error fetching accepted decisions: {str(e)}")
+        return {}
+
+
+def get_accepted_decisions_chat():
+    """
+    Get accepted/rejected decisions from Messages table where is_hide = True
+    """
+    try:
+        # Get messages where is_hide = True (decisions have been made)
+        decision_messages = Messages.objects.filter(
+            is_hide=True,
+            is_accept__isnull=False  # Only messages where acceptance decision was made
+        ).order_by('-accepted_at')
+        
+        previous_decisions_chat = {}
+        decision_count = 1
+        
+        for message in decision_messages:
+            # Determine decision based on is_accept value
+            decision = "accept" if message.is_accept else "reject"
+            
+            # Extract answer from metadata if available
+            answer = ""
+            if message.metadata and isinstance(message.metadata, dict):
+                answer = message.metadata.get('answer', message.content)
+            else:
+                answer = message.content
+            
+            decision_data = {
+                "decision": decision,
+                "answer": answer,
+                "accepted_at": message.accepted_at.isoformat() if message.accepted_at else None
+            }
+            
+            previous_decisions_chat[str(decision_count)] = decision_data
+            decision_count += 1
+        
+        return previous_decisions_chat
+        
+    except Exception as e:
+        print(f"Error fetching chat decisions: {str(e)}")
         return {}
 
 
@@ -217,13 +258,17 @@ def build_api_payload(question, session_id, conversation_id=None):
             previous_chat = get_previous_chat_history(conversation_id)
         
         # Get accepted decisions from Alert model
-        previous_decisions = get_accepted_decisions()
+        previous_decisions_news = get_accepted_decisions_news()
+        
+        # Get accepted/rejected decisions from Messages table
+        previous_decisions_chat = get_accepted_decisions_chat()
         
         # Build the payload
         payload = {
             "question": question,
             "previous_chat": previous_chat,
-            "previous_decision": previous_decisions,
+            "previous_decision_news": previous_decisions_news,
+            "previous_decision_chat": previous_decisions_chat,
             "costing_json": costing_json
         }
         
@@ -247,7 +292,7 @@ def send_to_external_api(payload, api_url="http://0.0.0.0:8000/api/chatbot"):
             api_url,
             headers=headers,
             data=json.dumps(payload),
-            timeout=300
+            timeout=3000
         )
         
         if response.status_code == 200:

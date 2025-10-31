@@ -1339,3 +1339,261 @@ requests.exceptions.HTTPError: 500 Server Error: Internal Server Error for url: 
               DAILY NEWS PROCESSING COMPLETED               
 ============================================================
 
+2025-10-29 05:49:06,132 - INFO - News fetch API call successful - Status: 200
+2025-10-29 05:49:06,144 - INFO - Retrieved 2 articles from database
+2025-10-29 05:49:06,146 - ERROR - Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+2025-10-29 05:49:06,146 - ERROR - Daily news processing failed: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 53, in handle
+    self.send_to_decision_api(latest_news)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 201, in send_to_decision_api
+    response.raise_for_status()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-10-29 05:49:02.057598+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 2,
+    "total_articles_updated": 1,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 3
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 1,
+      "total_results": 2,
+      "articles_processed": 2,
+      "articles_created": 2,
+      "articles_updated": 0,
+      "articles_skipped...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Singapore's Lighthouse Canton to invest over $1.5 bln in India; eyes private credit, real estate>, <NewsArticle: Stanza Living To Raise $32 Mn From Accel, Motilal Oswal>]>
+✅ Retrieved 2 news articles from database
+📰 Sample articles:
+  1. Singapore's Lighthouse Canton to invest over $1.5 bln in India; eyes private cre...
+  2. Stanza Living To Raise $32 Mn From Accel, Motilal Oswal...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 2 articles
+❌ Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+❌ Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+
+2025-10-30 05:49:05,457 - INFO - News fetch API call successful - Status: 200
+2025-10-30 05:49:05,469 - INFO - Retrieved 3 articles from database
+2025-10-30 05:49:05,472 - ERROR - Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+2025-10-30 05:49:05,473 - ERROR - Daily news processing failed: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 53, in handle
+    self.send_to_decision_api(latest_news)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 201, in send_to_decision_api
+    response.raise_for_status()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-10-30 05:49:01.441568+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 1,
+    "total_articles_updated": 2,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 3
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 6,
+      "total_results": 2,
+      "articles_processed": 2,
+      "articles_created": 1,
+      "articles_updated": 1,
+      "articles_skipped...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Swerve Strickland sends a one-word message amid rumors of AEW return>, <NewsArticle: Singapore's Lighthouse Canton to invest over $1.5 bln in India; eyes private credit, real estate>, <NewsArticle: Stanza Living To Raise $32 Mn From Accel, Motilal Oswal>]>
+✅ Retrieved 3 news articles from database
+📰 Sample articles:
+  1. Swerve Strickland sends a one-word message amid rumors of AEW return...
+  2. Singapore's Lighthouse Canton to invest over $1.5 bln in India; eyes private cre...
+  3. Stanza Living To Raise $32 Mn From Accel, Motilal Oswal...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 3 articles
+❌ Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+❌ Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+
+2025-10-31 05:49:05,865 - INFO - News fetch API call successful - Status: 200
+2025-10-31 05:49:05,879 - INFO - Retrieved 1 articles from database
+2025-10-31 05:49:05,880 - ERROR - Failed to send news to decision API: HTTPConnectionPool(host='0.0.0.0', port=8000): Max retries exceeded with url: /api/news_decision (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7bbfb07b09d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2025-10-31 05:49:05,880 - ERROR - Daily news processing failed: HTTPConnectionPool(host='0.0.0.0', port=8000): Max retries exceeded with url: /api/news_decision (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7bbfb07b09d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/urllib3/connection.py", line 198, in _new_conn
+    sock = connection.create_connection(
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/urllib3/util/connection.py", line 85, in create_connection
+    raise err
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/urllib3/util/connection.py", line 73, in create_connection
+    sock.connect(sa)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/urllib3/connectionpool.py", line 493, in _make_request
+    conn.request(
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/urllib3/connection.py", line 494, in request
+    self.endheaders()
+  File "/usr/lib/python3.10/http/client.py", line 1278, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.10/http/client.py", line 1038, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.10/http/client.py", line 976, in send
+    self.connect()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/urllib3/connection.py", line 325, in connect
+    self.sock = self._new_conn()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/urllib3/connection.py", line 213, in _new_conn
+    raise NewConnectionError(
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7bbfb07b09d0>: Failed to establish a new connection: [Errno 111] Connection refused
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/adapters.py", line 486, in send
+    resp = conn.urlopen(
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/urllib3/util/retry.py", line 519, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='0.0.0.0', port=8000): Max retries exceeded with url: /api/news_decision (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7bbfb07b09d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 53, in handle
+    self.send_to_decision_api(latest_news)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 195, in send_to_decision_api
+    response = requests.post(
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/adapters.py", line 519, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='0.0.0.0', port=8000): Max retries exceeded with url: /api/news_decision (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7bbfb07b09d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-10-31 05:49:01.891222+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 1,
+    "total_articles_updated": 0,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 1
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 1,
+      "total_results": 1,
+      "articles_processed": 1,
+      "articles_created": 1,
+      "articles_updated": 0,
+      "articles_skipped...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Swerve Strickland sends a one-word message amid rumors of AEW return>]>
+✅ Retrieved 1 news articles from database
+📰 Sample articles:
+  1. Swerve Strickland sends a one-word message amid rumors of AEW return...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 1 articles
+❌ Failed to send news to decision API: HTTPConnectionPool(host='0.0.0.0', port=8000): Max retries exceeded with url: /api/news_decision (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7bbfb07b09d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+❌ Error in daily news processing: HTTPConnectionPool(host='0.0.0.0', port=8000): Max retries exceeded with url: /api/news_decision (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7bbfb07b09d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+

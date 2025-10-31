@@ -4,8 +4,11 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from decimal import Decimal
-from .models import Projects, ProjectCosts, ProjectOverheads
-from .serializers import PDFExtractionSerializer, ProjectSerializer, ChatAcceptRequestSerializer, ChatAcceptResponseSerializer, CostingJsonSerializer, LatestCostingResponseSerializer
+from .models import Projects, ProjectCosts, ProjectOverheads, ProjectVersion, ProjectCostVersion, ProjectOverheadVersion
+from .serializers import (PDFExtractionSerializer, ProjectSerializer, ChatAcceptRequestSerializer, 
+                         ChatAcceptResponseSerializer, CostingJsonSerializer, LatestCostingResponseSerializer,
+                         ProjectVersionHistoryResponseSerializer, ProjectDetailSerializer, ProjectVersionCostSerializer, 
+                         ProjectVersionOverheadSerializer)
 from rest_framework.permissions import IsAuthenticated
 from chatapp.models import Session, Conversation, Messages
 from authentication.models import UserDetail
@@ -253,7 +256,7 @@ def call_chatbot_decision_accept_api(approval, costing_json):
     
     try:
         logger.info(f"Calling chatbot decision accept API with approval: {approval}")
-        response = requests.post(api_url, json=payload, headers=headers, timeout=300)
+        response = requests.post(api_url, json=payload, headers=headers, timeout=3000)
         response.raise_for_status()
         
         api_response = response.json()
@@ -298,7 +301,14 @@ class ChatAcceptView(APIView):
             
             # Update the original message to hide it
             message.is_hide = True
-            message.save()
+            
+            # If approval is 'accept', mark the message as accepted
+            if approval == 'accept':
+                message.accept_message()  # This sets is_accept=True and accepted_at=timezone.now() and saves
+            else:
+                from django.utils import timezone
+                message.accepted_at = timezone.now()
+                message.save()  # Save with accepted_at timestamp even on reject
             
             # If approval is 'reject', just return success without calling external API
             if approval == 'reject':
@@ -610,6 +620,126 @@ class LatestCostingView(APIView):
             
         except Exception as e:
             logger.error(f"Error fetching latest costing data: {str(e)}")
+            return Response({
+                'error': 'Internal server error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ProjectVersionHistoryView(APIView):
+    """
+    API endpoint to fetch complete project version history with costs and overheads for each version.
+    GET /api/budget/projects/{project_id}/version-history/
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, project_id, format=None):
+        """
+        Get complete project version history including all costs and overheads for each version
+        """
+        try:
+            # Get the project
+            try:
+                project = Projects.objects.get(id=project_id)
+            except Projects.DoesNotExist:
+                return Response({
+                    'error': 'Project not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Get all project versions (historical data)
+            project_versions = ProjectVersion.objects.filter(project=project).order_by('version_number')
+            
+            # Build version history data
+            version_history_data = []
+            
+            # Add historical versions from ProjectVersion table
+            for version in project_versions:
+                # Get costs for this version from ProjectCostVersion table
+                version_costs = ProjectCostVersion.objects.filter(
+                    project=project,
+                    version_number=version.version_number
+                ).order_by('id')
+                
+                # Get overheads for this version from ProjectOverheadVersion table
+                version_overheads = ProjectOverheadVersion.objects.filter(
+                    project=project,
+                    version_number=version.version_number
+                ).order_by('id')
+                
+                # Serialize costs and overheads for this version
+                costs_data = []
+                for cost_version in version_costs:
+                    costs_data.append({
+                        'id': cost_version.id,
+                        'category_code': cost_version.category_code,
+                        'category_name': cost_version.category_name,
+                        'item_description': cost_version.item_description,
+                        'supplier_brand': cost_version.supplier_brand,
+                        'unit': cost_version.unit,
+                        'quantity': cost_version.quantity,
+                        'rate_per_unit': cost_version.rate_per_unit,
+                        'line_total': cost_version.line_total,
+                        'category_total': cost_version.category_total
+                    })
+                
+                overheads_data = []
+                for overhead_version in version_overheads:
+                    overheads_data.append({
+                        'id': overhead_version.id,
+                        'overhead_type': overhead_version.overhead_type,
+                        'description': overhead_version.description,
+                        'basis': overhead_version.basis,
+                        'percentage': overhead_version.percentage,
+                        'amount': overhead_version.amount
+                    })
+                
+                version_data = {
+                    'version_number': version.version_number,
+                    'total_cost': version.total_cost,
+                    'timestamp': version.updated_at,
+                    'change_reason': version.change_reason,
+                    'changed_by': version.changed_by,
+                    'project_costs': costs_data,
+                    'project_overheads': overheads_data
+                }
+                version_history_data.append(version_data)
+            
+            # Add current version (from main tables)
+            current_costs = ProjectCosts.objects.filter(project=project).order_by('id')
+            current_overheads = ProjectOverheads.objects.filter(project=project).order_by('id')
+            
+            # Serialize current costs and overheads
+            current_costs_data = ProjectVersionCostSerializer(current_costs, many=True).data
+            current_overheads_data = ProjectVersionOverheadSerializer(current_overheads, many=True).data
+            
+            # Add current version to history
+            current_version_data = {
+                'version_number': project.version_number,
+                'total_cost': project.total_cost,
+                'timestamp': project.updated_at,
+                'change_reason': 'Current version',
+                'changed_by': 'system',
+                'project_costs': current_costs_data,
+                'project_overheads': current_overheads_data
+            }
+            version_history_data.append(current_version_data)
+            
+            # Sort by version number
+            version_history_data.sort(key=lambda x: x['version_number'])
+            
+            # Prepare response data
+            response_data = {
+                'status': 'success',
+                'message': f'Retrieved complete project version history for {project.name}',
+                'project_detail': ProjectDetailSerializer(project).data,
+                'project_versions': version_history_data
+            }
+            
+            logger.info(f"Successfully retrieved version history for project {project_id} with {len(version_history_data)} versions")
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error fetching project version history: {str(e)}", exc_info=True)
             return Response({
                 'error': 'Internal server error',
                 'message': str(e)

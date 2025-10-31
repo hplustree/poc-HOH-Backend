@@ -18,7 +18,7 @@ class Command(BaseCommand):
                 self.remove_cron_job()
                 return
                 
-            # Get cron time from environment variable or .env.docker file
+            # Get cron time from environment variable
             cron_time = self.get_cron_time_from_env()
             
             # Get project path
@@ -145,18 +145,9 @@ class Command(BaseCommand):
             )
 
     def get_cron_time_from_env(self):
-        """Get cron time from environment variable or .env.docker file"""
-        # First try environment variable
+        """Get cron time from environment variable"""
+        # Try environment variable
         cron_time = os.getenv('DAILY_NEWS_CRON_TIME')
-        if not cron_time:
-            # Try to read from .env.docker file
-            env_file_path = os.path.join(os.getcwd(), '.env.docker')
-            if os.path.exists(env_file_path):
-                with open(env_file_path, 'r') as f:
-                    for line in f:
-                        if line.startswith('DAILY_NEWS_CRON_TIME='):
-                            cron_time = line.split('=', 1)[1].strip()
-                            break
         
         if not cron_time:
             # Default fallback to 3 AM
