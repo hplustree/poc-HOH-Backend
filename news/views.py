@@ -6,9 +6,11 @@ from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework import status, serializers
+from rest_framework import status
 from .models import NewsArticle, NewsAPIResponse, Alert
-from .serializers import AlertSerializer, AlertStatusUpdateSerializer
+from .serializers import (AlertSerializer, AlertStatusUpdateSerializer, 
+                         NewsArticleSerializer, NewsDecisionAcceptRequestSerializer, 
+                         NewsDecisionAcceptResponseSerializer)
 from budget.models import Projects, ProjectCosts, ProjectOverheads
 from dotenv import load_dotenv
 
@@ -16,17 +18,6 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-
-class NewsArticleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = NewsArticle
-        fields = [
-            'article_id', 'title', 'link', 'description', 'content',
-            'pub_date', 'pub_date_tz', 'image_url', 'video_url',
-            'source_id', 'source_name', 'source_icon', 'language',
-            'country', 'category', 'keywords', 'creator', 'created_at'
-        ]
-        read_only_fields = fields
 
 
 def process_single_api_call(api_url, params):
@@ -469,8 +460,11 @@ def get_and_mark_accepted_alerts(request):
                     
                     # Only save if there are actual changes
                     if changes_made:
-                        # Save will automatically calculate line_total and handle versioning
+                        # Save will automatically calculate line_total and create version record
+                        logger.info(f'Creating version record for ProjectCost ID {project_costs.id} from Alert #{alert.alert_id}')
+                        original_version = project_costs.version_number
                         project_costs.save()
+                        logger.info(f'Version record created with version {original_version + 1}. Original cost item remains unchanged.')
                         updated_budget_items += 1
                         
                         budget_update_details.append({
@@ -567,20 +561,6 @@ def update_alert_status(request, alert_id):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class NewsDecisionAcceptRequestSerializer(serializers.Serializer):
-    """Serializer for the news decision accept API request"""
-    alert_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        help_text="List of alert IDs to process"
-    )
-
-
-class NewsDecisionAcceptResponseSerializer(serializers.Serializer):
-    """Serializer for the news decision accept API response"""
-    success = serializers.BooleanField()
-    message = serializers.CharField()
-    external_api_response = serializers.JSONField()
-    processed_alerts = serializers.ListField()
 
 
 def get_latest_project_costing_data():
@@ -703,7 +683,10 @@ def update_budget_from_external_response(external_response_data, user, alert_ids
                 if project_changed:
                     latest_project._changed_by = f'news_decision_api_{user.username}'
                     latest_project._change_reason = f'Updated from news decision API with alerts: {alert_ids}'
+                    logger.info(f'Creating version record for project changes from news decision API')
+                    original_version = latest_project.version_number
                     latest_project.save()
+                    logger.info(f'Project version record created with version {original_version + 1}. Original project remains unchanged.')
                     update_summary['updated_project'] = True
             
             # Update cost line items
@@ -745,10 +728,13 @@ def update_budget_from_external_response(external_response_data, user, alert_ids
                         if changes_made:
                             project_cost._changed_by = f'news_decision_api_{user.username}'
                             project_cost._change_reason = f'Updated from news decision API with alerts: {alert_ids} - Changed: {", ".join(changes_made)}'
+                            logger.info(f'Creating version record for ProjectCost ID {project_cost.id} from news decision API')
+                            original_version = project_cost.version_number
                             project_cost.save()
+                            logger.info(f'Cost version record created with version {original_version + 1}. Original cost item remains unchanged.')
                             update_summary['updated_costs'] += 1
                             
-                            logger.info(f'Updated ProjectCost ID {project_cost.id}: {", ".join(changes_made)}')
+                            logger.info(f'Version record created for ProjectCost ID {project_cost.id}: {", ".join(changes_made)}')
                     
                 except Exception as e:
                     error_msg = f'Error updating cost item {item_data.get("item_description", "unknown")}: {str(e)}'
@@ -788,10 +774,13 @@ def update_budget_from_external_response(external_response_data, user, alert_ids
                         if changes_made:
                             project_overhead._changed_by = f'news_decision_api_{user.username}'
                             project_overhead._change_reason = f'Updated from news decision API with alerts: {alert_ids} - Changed: {", ".join(changes_made)}'
+                            logger.info(f'Creating version record for ProjectOverhead ID {project_overhead.id} from news decision API')
+                            original_version = project_overhead.version_number
                             project_overhead.save()
+                            logger.info(f'Overhead version record created with version {original_version + 1}. Original overhead remains unchanged.')
                             update_summary['updated_overheads'] += 1
                             
-                            logger.info(f'Updated ProjectOverhead ID {project_overhead.id}: {", ".join(changes_made)}')
+                            logger.info(f'Version record created for ProjectOverhead ID {project_overhead.id}: {", ".join(changes_made)}')
                     
                     else:
                         # Create new overhead if it doesn't exist
@@ -806,7 +795,7 @@ def update_budget_from_external_response(external_response_data, user, alert_ids
                             )
                             new_overhead._changed_by = f'news_decision_api_{user.username}'
                             new_overhead._change_reason = f'Created from news decision API with alerts: {alert_ids}'
-                            new_overhead.save()
+                            new_overhead.save()  # This is a new record, so no version control needed
                             update_summary['updated_overheads'] += 1
                             
                             logger.info(f'Created new ProjectOverhead ID {new_overhead.id}: {overhead_data["overhead_type"]}')

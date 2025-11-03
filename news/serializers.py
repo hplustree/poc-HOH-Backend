@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Alert
+from .models import Alert, NewsArticle
 
 
 class AlertSerializer(serializers.ModelSerializer):
@@ -40,3 +40,33 @@ class AlertStatusUpdateSerializer(serializers.ModelSerializer):
             
         instance.save()
         return instance
+
+
+class NewsArticleSerializer(serializers.ModelSerializer):
+    """Serializer for NewsArticle model"""
+    
+    class Meta:
+        model = NewsArticle
+        fields = [
+            'article_id', 'title', 'link', 'description', 'content',
+            'pub_date', 'pub_date_tz', 'image_url', 'video_url',
+            'source_id', 'source_name', 'source_icon', 'language',
+            'country', 'category', 'keywords', 'creator', 'created_at'
+        ]
+        read_only_fields = fields
+
+
+class NewsDecisionAcceptRequestSerializer(serializers.Serializer):
+    """Serializer for the news decision accept API request"""
+    alert_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        help_text="List of alert IDs to process"
+    )
+
+
+class NewsDecisionAcceptResponseSerializer(serializers.Serializer):
+    """Serializer for the news decision accept API response"""
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    external_api_response = serializers.JSONField()
+    processed_alerts = serializers.ListField()

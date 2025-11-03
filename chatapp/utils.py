@@ -4,6 +4,70 @@ from news.models import Alert
 from collections import defaultdict
 import requests
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def update_model_with_version_control(model_instance, update_data, changed_by, change_reason):
+    """
+    Utility function to update model instances with automatic version control.
+    
+    Args:
+        model_instance: The model instance to update
+        update_data: Dictionary of fields to update
+        changed_by: Username or identifier of who made the change
+        change_reason: Reason for the change
+    
+    Returns:
+        tuple: (updated_instance, changes_made_list)
+    """
+    changes_made = []
+    
+    # Check for changes and update fields
+    for field, new_value in update_data.items():
+        if hasattr(model_instance, field):
+            current_value = getattr(model_instance, field)
+            
+            # Handle decimal/float comparisons
+            if isinstance(current_value, (int, float)) and isinstance(new_value, (int, float)):
+                if float(current_value) != float(new_value):
+                    setattr(model_instance, field, new_value)
+                    changes_made.append(f'{field}: {current_value} → {new_value}')
+            elif current_value != new_value:
+                setattr(model_instance, field, new_value)
+                changes_made.append(f'{field}: {current_value} → {new_value}')
+    
+    # Only save if there are changes
+    if changes_made:
+        model_instance._changed_by = changed_by
+        model_instance._change_reason = change_reason
+        model_instance.save()
+        logger.info(f'Updated {model_instance.__class__.__name__} ID {model_instance.id}: {", ".join(changes_made)}')
+    
+    return model_instance, changes_made
+
+
+def log_api_response(operation, success=True, details=None, error=None):
+    """
+    Standardized logging for API operations
+    
+    Args:
+        operation: Description of the operation
+        success: Whether the operation was successful
+        details: Additional details to log
+        error: Error message if operation failed
+    """
+    if success:
+        message = f"✅ {operation}"
+        if details:
+            message += f" - {details}"
+        logger.info(message)
+    else:
+        message = f"❌ {operation} failed"
+        if error:
+            message += f" - {error}"
+        logger.error(message)
 
 
 def generate_costing_json_from_db(project_id=None, include_wrapper=False):
@@ -124,12 +188,6 @@ def generate_costing_json_from_db(project_id=None, include_wrapper=False):
         return {"status": "error", "message": f"Error generating costing data: {str(e)}"}
 
 
-def get_project_costing_json(project_id):
-    """
-    Build costing JSON from project data in the database matching the required format.
-    This function maintains backward compatibility by returning the wrapped format.
-    """
-    return generate_costing_json_from_db(project_id=project_id, include_wrapper=True)
 
 
 def get_previous_chat_history(conversation_id, limit=10):
@@ -197,7 +255,7 @@ def get_accepted_decisions_news():
         return previous_decisions_news
         
     except Exception as e:
-        print(f"Error fetching accepted decisions: {str(e)}")
+        logger.error(f"Error fetching accepted decisions: {str(e)}")
         return {}
 
 
@@ -238,7 +296,7 @@ def get_accepted_decisions_chat():
         return previous_decisions_chat
         
     except Exception as e:
-        print(f"Error fetching chat decisions: {str(e)}")
+        logger.error(f"Error fetching chat decisions: {str(e)}")
         return {}
 
 
@@ -251,7 +309,7 @@ def build_api_payload(question, session_id, conversation_id=None):
         project_id = session.project_id.id
         
         # Get costing JSON from project data
-        costing_json = get_project_costing_json(project_id)
+        costing_json = generate_costing_json_from_db(project_id=project_id, include_wrapper=True)
         # Get previous chat history if conversation exists
         previous_chat = {}
         if conversation_id:

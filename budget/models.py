@@ -44,7 +44,7 @@ class Projects(models.Model):
             # Get the original object to compare changes
             original = Projects.objects.get(pk=self.pk)
             
-            # Check if tracked fields have changed
+            # Check if ANY project field has changed
             tracked_fields = ['name', 'location', 'start_date', 'end_date', 'total_cost']
             has_changes = any(
                 getattr(self, field) != getattr(original, field) 
@@ -52,24 +52,25 @@ class Projects(models.Model):
             )
             
             if has_changes:
-                # Create version record before updating
+                # Insert NEW record in version table with OLD values
                 ProjectVersion.objects.create(
-                    project=original,
-                    name=original.name,
+                    project=self,  # Reference to this record (will be updated)
+                    name=original.name,  # OLD values
                     location=original.location,
                     start_date=original.start_date,
                     end_date=original.end_date,
                     total_cost=original.total_cost,
-                    version_number=original.version_number,
+                    version_number=original.version_number,  # Current version number
                     changed_by=getattr(self, '_changed_by', 'system'),
                     change_reason=getattr(self, '_change_reason', 'Updated'),
-                    created_at=original.created_at,
-                    updated_at=original.updated_at
+                    created_at=original.created_at,  # Original creation time
+                    updated_at=original.updated_at   # Original update time
                 )
                 
-                # Increment version number
+                # Increment version number for the main record
                 self.version_number = original.version_number + 1
         
+        # Update the SAME record in main table with NEW values
         super().save(*args, **kwargs)
 
 
@@ -131,18 +132,24 @@ class ProjectCosts(models.Model):
             # Get the original object to compare changes
             original = ProjectCosts.objects.get(pk=self.pk)
             
-            # Check if tracked fields have changed
-            tracked_fields = ['quantity', 'rate_per_unit', 'supplier_brand', 'category_total']
-            has_changes = any(
+            # Check if ANY field has changed (including calculated line_total)
+            tracked_fields = ['project_id', 'category_code', 'category_name', 'item_description', 
+                            'supplier_brand', 'unit', 'quantity', 'rate_per_unit', 'category_total']
+            
+            # Also check if line_total would change due to quantity/rate changes
+            new_line_total = self.quantity * self.rate_per_unit
+            line_total_changed = new_line_total != original.line_total
+            
+            has_changes = line_total_changed or any(
                 getattr(self, field) != getattr(original, field) 
                 for field in tracked_fields
             )
             
             if has_changes:
-                # Create version record before updating
+                # Insert NEW record in version table with OLD values
                 ProjectCostVersion.objects.create(
-                    project_cost=original,
-                    project=original.project,
+                    project_cost=self,  # Reference to this record (will be updated)
+                    project=original.project,  # OLD values
                     category_code=original.category_code,
                     category_name=original.category_name,
                     item_description=original.item_description,
@@ -152,16 +159,17 @@ class ProjectCosts(models.Model):
                     rate_per_unit=original.rate_per_unit,
                     line_total=original.line_total,
                     category_total=original.category_total,
-                    version_number=original.version_number,
+                    version_number=original.version_number,  # Current version number
                     changed_by=getattr(self, '_changed_by', 'system'),
                     change_reason=getattr(self, '_change_reason', 'Updated'),
-                    created_at=original.created_at,
-                    updated_at=original.updated_at
+                    created_at=original.created_at,  # Original creation time
+                    updated_at=original.updated_at   # Original update time
                 )
                 
-                # Increment version number
+                # Increment version number for the main record
                 self.version_number = original.version_number + 1
         
+        # Update the SAME record in main table with NEW values
         super().save(*args, **kwargs)
 
 
@@ -221,33 +229,34 @@ class ProjectOverheads(models.Model):
             # Get the original object to compare changes
             original = ProjectOverheads.objects.get(pk=self.pk)
             
-            # Check if tracked fields have changed
-            tracked_fields = ['percentage', 'amount', 'overhead_type', 'description']
+            # Check if ANY field has changed
+            tracked_fields = ['project_id', 'overhead_type', 'description', 'basis', 'percentage', 'amount']
             has_changes = any(
                 getattr(self, field) != getattr(original, field) 
                 for field in tracked_fields
             )
             
             if has_changes:
-                # Create version record before updating
+                # Insert NEW record in version table with OLD values
                 ProjectOverheadVersion.objects.create(
-                    project_overhead=original,
-                    project=original.project,
+                    project_overhead=self,  # Reference to this record (will be updated)
+                    project=original.project,  # OLD values
                     overhead_type=original.overhead_type,
                     description=original.description,
                     basis=original.basis,
                     percentage=original.percentage,
                     amount=original.amount,
-                    version_number=original.version_number,
+                    version_number=original.version_number,  # Current version number
                     changed_by=getattr(self, '_changed_by', 'system'),
                     change_reason=getattr(self, '_change_reason', 'Updated'),
-                    created_at=original.created_at,
-                    updated_at=original.updated_at
+                    created_at=original.created_at,  # Original creation time
+                    updated_at=original.updated_at   # Original update time
                 )
                 
-                # Increment version number
+                # Increment version number for the main record
                 self.version_number = original.version_number + 1
         
+        # Update the SAME record in main table with NEW values
         super().save(*args, **kwargs)
 
 

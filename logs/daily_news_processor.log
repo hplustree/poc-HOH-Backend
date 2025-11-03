@@ -1597,3 +1597,212 @@ requests.exceptions.ConnectionError: HTTPConnectionPool(host='0.0.0.0', port=800
                 DAILY NEWS PROCESSING FAILED                
 ============================================================
 
+2025-11-01 05:49:06,069 - INFO - News fetch API call successful - Status: 200
+2025-11-01 05:49:06,084 - INFO - Retrieved 2 articles from database
+2025-11-01 05:49:06,086 - ERROR - Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+2025-11-01 05:49:06,086 - ERROR - Daily news processing failed: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 53, in handle
+    self.send_to_decision_api(latest_news)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 201, in send_to_decision_api
+    response.raise_for_status()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-11-01 05:49:01.628071+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 2,
+    "total_articles_updated": 0,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 2
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 1,
+      "total_results": 2,
+      "articles_processed": 2,
+      "articles_created": 2,
+      "articles_updated": 0,
+      "articles_skipped...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets>, <NewsArticle: Indian woman captures Dubai Police patrolling crowded market on horseback: 'Streets bow to these kin>]>
+✅ Retrieved 2 news articles from database
+📰 Sample articles:
+  1. Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets...
+  2. Indian woman captures Dubai Police patrolling crowded market on horseback: 'Stre...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 2 articles
+❌ Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+❌ Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+
+2025-11-02 05:49:05,978 - INFO - News fetch API call successful - Status: 200
+2025-11-02 05:49:05,991 - INFO - Retrieved 3 articles from database
+2025-11-02 05:49:05,993 - ERROR - Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+2025-11-02 05:49:05,993 - ERROR - Daily news processing failed: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 53, in handle
+    self.send_to_decision_api(latest_news)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 201, in send_to_decision_api
+    response.raise_for_status()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-11-02 05:49:01.522926+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 1,
+    "total_articles_updated": 3,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 4
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 6,
+      "total_results": 3,
+      "articles_processed": 3,
+      "articles_created": 1,
+      "articles_updated": 2,
+      "articles_skipped...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Uttar Pradesh Real Estate Gets A Boost With 15 New Projects Worth Rs 2,434 Crore>, <NewsArticle: Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets>, <NewsArticle: Indian woman captures Dubai Police patrolling crowded market on horseback: 'Streets bow to these kin>]>
+✅ Retrieved 3 news articles from database
+📰 Sample articles:
+  1. Uttar Pradesh Real Estate Gets A Boost With 15 New Projects Worth Rs 2,434 Crore...
+  2. Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets...
+  3. Indian woman captures Dubai Police patrolling crowded market on horseback: 'Stre...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 3 articles
+❌ Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+❌ Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+
+2025-11-03 05:49:06,056 - INFO - News fetch API call successful - Status: 200
+2025-11-03 05:49:06,069 - INFO - Retrieved 3 articles from database
+2025-11-03 05:49:06,071 - ERROR - Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+2025-11-03 05:49:06,071 - ERROR - Daily news processing failed: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 53, in handle
+    self.send_to_decision_api(latest_news)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 201, in send_to_decision_api
+    response.raise_for_status()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+🚀 Starting daily news processing at 2025-11-03 05:49:01.607040+00:00
+
+📋 STEP 1: Fetching news from external API
+--------------------------------------------------
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 0,
+    "total_articles_updated": 2,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 2
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 11,
+      "total_results": 1,
+      "articles_processed": 1,
+      "articles_created": 0,
+      "articles_updated": 1,
+      "articles_skippe...
+
+📋 STEP 2: Retrieving latest news from database
+--------------------------------------------------
+🗄️  Querying database for latest news...
+<QuerySet [<NewsArticle: Uttar Pradesh Real Estate Gets A Boost With 15 New Projects Worth Rs 2,434 Crore>, <NewsArticle: Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets>, <NewsArticle: Indian woman captures Dubai Police patrolling crowded market on horseback: 'Streets bow to these kin>]>
+✅ Retrieved 3 news articles from database
+📰 Sample articles:
+  1. Uttar Pradesh Real Estate Gets A Boost With 15 New Projects Worth Rs 2,434 Crore...
+  2. Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets...
+  3. Indian woman captures Dubai Police patrolling crowded market on horseback: 'Stre...
+
+📋 STEP 3: Sending news to decision API
+--------------------------------------------------
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 3 articles
+❌ Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+❌ Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+

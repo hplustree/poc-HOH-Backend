@@ -65,19 +65,15 @@ def send_message(request):
     """
     Handle user message: save to DB first, then call external chatbot API with complete payload
     """
-    print("\n=== Incoming Request ===")
-    print(f"Method: {request.method}")
-    print(f"Content-Type: {request.content_type}")
-    print(f"Headers: {dict(request.headers)}")
-    print(f"Data: {request.data}")
-    print("====================\n")
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.debug(f"Incoming request - Method: {request.method}, Content-Type: {request.content_type}")
     
     try:
         serializer = MessageCreateSerializer(data=request.data)
         if not serializer.is_valid():
-            print("\n=== Validation Errors ===")
-            print(serializer.errors)
-            print("======================\n")
+            logger.warning(f"Validation errors: {serializer.errors}")
             return Response({
                 'success': False,
                 'error': 'Invalid data',

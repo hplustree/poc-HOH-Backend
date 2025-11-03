@@ -9,7 +9,6 @@ from .serializers import (PDFExtractionSerializer, ProjectSerializer, ChatAccept
                          ChatAcceptResponseSerializer, CostingJsonSerializer, LatestCostingResponseSerializer,
                          ProjectVersionHistoryResponseSerializer, ProjectDetailSerializer, ProjectVersionCostSerializer, 
                          ProjectVersionOverheadSerializer)
-from rest_framework.permissions import IsAuthenticated
 from chatapp.models import Session, Conversation, Messages
 from authentication.models import UserDetail
 from chatapp.utils import generate_costing_json_from_db, create_sessions_for_all_users_on_project_creation
@@ -425,9 +424,10 @@ class ChatAcceptView(APIView):
                         for field, value in update_fields.items():
                             setattr(project, field, value)
                         
-                        logger.info(f"Saving project with version control: {update_fields}")
+                        logger.info(f"Creating version record for project changes: {update_fields}")
+                        original_version = project.version_number
                         project.save()
-                        logger.info(f"Project version updated to: {project.version_number}")
+                        logger.info(f"Version record created with version {original_version + 1}. Original project remains unchanged.")
                     else:
                         logger.info("No project fields changed, skipping version control")
                 else:
@@ -480,9 +480,10 @@ class ChatAcceptView(APIView):
                                 existing_cost.unit = item.get('unit', existing_cost.unit)
                                 existing_cost.category_name = item.get('category_name', existing_cost.category_name)
                                 
-                                logger.info(f"Saving cost item with version control: {existing_cost.item_description}")
+                                logger.info(f"Creating version record for cost item: {existing_cost.item_description}")
+                                original_version = existing_cost.version_number
                                 existing_cost.save()
-                                logger.info(f"Cost item version updated to: {existing_cost.version_number}")
+                                logger.info(f"Version record created with version {original_version + 1}. Original cost item remains unchanged.")
                             else:
                                 logger.info(f"No changes detected for cost item: {existing_cost.item_description}")
                         else:
@@ -548,9 +549,10 @@ class ChatAcceptView(APIView):
                                 if item.get('amount') is not None:
                                     existing_overhead.amount = Decimal(str(item.get('amount')))
                                 
-                                logger.info(f"Saving overhead with version control: {existing_overhead.overhead_type}")
+                                logger.info(f"Creating version record for overhead: {existing_overhead.overhead_type}")
+                                original_version = existing_overhead.version_number
                                 existing_overhead.save()
-                                logger.info(f"Overhead version updated to: {existing_overhead.version_number}")
+                                logger.info(f"Version record created with version {original_version + 1}. Original overhead remains unchanged.")
                             else:
                                 logger.info(f"No changes detected for overhead: {existing_overhead.overhead_type}")
                         else:
