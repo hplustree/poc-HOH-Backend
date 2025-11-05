@@ -123,9 +123,14 @@ class ProjectCosts(models.Model):
 
     def save(self, *args, **kwargs):
         """Override save to implement automatic versioning"""
+        from decimal import Decimal
+        
         # Calculate line_total automatically if quantity and rate_per_unit are not None
         if self.quantity is not None and self.rate_per_unit is not None:
-            self.line_total = self.quantity * self.rate_per_unit
+            # Ensure both values are Decimal to avoid type mismatch errors
+            quantity_decimal = Decimal(str(self.quantity))
+            rate_decimal = Decimal(str(self.rate_per_unit))
+            self.line_total = quantity_decimal * rate_decimal
         
         is_new = self.pk is None
         
@@ -140,7 +145,10 @@ class ProjectCosts(models.Model):
             # Also check if line_total would change due to quantity/rate changes
             new_line_total = None
             if self.quantity is not None and self.rate_per_unit is not None:
-                new_line_total = self.quantity * self.rate_per_unit
+                # Ensure both values are Decimal to avoid type mismatch errors
+                quantity_decimal = Decimal(str(self.quantity))
+                rate_decimal = Decimal(str(self.rate_per_unit))
+                new_line_total = quantity_decimal * rate_decimal
             line_total_changed = new_line_total != original.line_total
             
             has_changes = line_total_changed or any(

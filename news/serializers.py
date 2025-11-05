@@ -70,3 +70,10 @@ class NewsDecisionAcceptResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
     external_api_response = serializers.JSONField()
     processed_alerts = serializers.ListField()
+
+
+class MLDecisionResponseSerializer(serializers.Serializer):
+    """Serializer for directly posting ML decision API response"""
+    response = serializers.JSONField(
+        help_text="The complete response from ML decision API with numbered decision keys"
+    )

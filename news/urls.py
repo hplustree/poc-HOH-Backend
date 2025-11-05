@@ -12,4 +12,5 @@ urlpatterns = [
     path('alerts/accepted-unsent/', views.get_and_mark_accepted_alerts, name='get_and_mark_accepted_alerts'),
     path('alerts/<int:alert_id>/status/', views.update_alert_status, name='update_alert_status'),
     path('alerts/process-and-call-decision-api/', views.process_news_alerts_and_call_decision_api, name='process_news_alerts_and_call_decision_api'),
+    path('alerts/post-ml-response/', views.post_ml_decision_response, name='post_ml_decision_response'),
 ]

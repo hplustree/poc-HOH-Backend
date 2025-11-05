@@ -10,7 +10,7 @@ from rest_framework import status
 from .models import NewsArticle, NewsAPIResponse, Alert
 from .serializers import (AlertSerializer, AlertStatusUpdateSerializer, 
                          NewsArticleSerializer, NewsDecisionAcceptRequestSerializer, 
-                         NewsDecisionAcceptResponseSerializer)
+                         NewsDecisionAcceptResponseSerializer, MLDecisionResponseSerializer)
 from budget.models import Projects, ProjectCosts, ProjectOverheads
 from dotenv import load_dotenv
 
@@ -333,7 +333,7 @@ def get_news_articles(request):
 @permission_classes([IsAuthenticated])
 def get_unsent_alerts(request):
     """
-    Get alerts from previous day where is_sent = false
+    Get alerts from previous day where is_sent = false and is_accept = false
     """
     try:
         # Calculate previous day date range
@@ -341,9 +341,10 @@ def get_unsent_alerts(request):
         previous_day_start = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
         previous_day_end = (now - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
         
-        # Get unsent alerts from previous day only
+        # Get unsent alerts from previous day only where is_accept = False
         alerts = Alert.objects.filter(
             is_sent=False,
+            is_accept=False,
             created_at__gte=previous_day_start,
             created_at__lte=previous_day_end
         ).order_by('-created_at')
@@ -633,6 +634,7 @@ def update_budget_from_external_response(external_response_data, user, alert_ids
     """
     try:
         from django.db import transaction
+        from decimal import Decimal
         
         update_summary = {
             'updated_project': False,
@@ -677,7 +679,7 @@ def update_budget_from_external_response(external_response_data, user, alert_ids
                 
                 if (project_data.get('total_cost') is not None and 
                     float(project_data['total_cost']) != float(latest_project.total_cost or 0)):
-                    latest_project.total_cost = project_data['total_cost']
+                    latest_project.total_cost = Decimal(str(project_data['total_cost']))
                     project_changed = True
                 
                 if project_changed:
@@ -711,17 +713,17 @@ def update_budget_from_external_response(external_response_data, user, alert_ids
                         
                         if (item_data.get('quantity') and 
                             float(item_data['quantity']) != float(project_cost.quantity)):
-                            project_cost.quantity = item_data['quantity']
+                            project_cost.quantity = Decimal(str(item_data['quantity']))
                             changes_made.append('quantity')
                         
                         if (item_data.get('rate_per_unit') and 
                             float(item_data['rate_per_unit']) != float(project_cost.rate_per_unit)):
-                            project_cost.rate_per_unit = item_data['rate_per_unit']
+                            project_cost.rate_per_unit = Decimal(str(item_data['rate_per_unit']))
                             changes_made.append('rate_per_unit')
                         
                         if (item_data.get('category_total') and 
                             float(item_data['category_total']) != float(project_cost.category_total or 0)):
-                            project_cost.category_total = item_data['category_total']
+                            project_cost.category_total = Decimal(str(item_data['category_total']))
                             changes_made.append('category_total')
                         
                         # Only save if there are changes
@@ -757,12 +759,12 @@ def update_budget_from_external_response(external_response_data, user, alert_ids
                         
                         if (overhead_data.get('percentage') and 
                             float(overhead_data['percentage']) != float(project_overhead.percentage)):
-                            project_overhead.percentage = overhead_data['percentage']
+                            project_overhead.percentage = Decimal(str(overhead_data['percentage']))
                             changes_made.append('percentage')
                         
                         if (overhead_data.get('amount') and 
                             float(overhead_data['amount']) != float(project_overhead.amount)):
-                            project_overhead.amount = overhead_data['amount']
+                            project_overhead.amount = Decimal(str(overhead_data['amount']))
                             changes_made.append('amount')
                         
                         if (overhead_data.get('description') and 
@@ -790,8 +792,8 @@ def update_budget_from_external_response(external_response_data, user, alert_ids
                                 overhead_type=overhead_data['overhead_type'],
                                 description=overhead_data.get('description', ''),
                                 basis=overhead_data.get('basis', 'On total cost'),
-                                percentage=overhead_data['percentage'],
-                                amount=overhead_data['amount']
+                                percentage=Decimal(str(overhead_data['percentage'])),
+                                amount=Decimal(str(overhead_data['amount']))
                             )
                             new_overhead._changed_by = f'news_decision_api_{user.username}'
                             new_overhead._change_reason = f'Created from news decision API with alerts: {alert_ids}'
@@ -867,7 +869,7 @@ def process_news_alerts_and_call_decision_api(request):
         }
         
         # Call external news-decision-accept API
-        external_api_url =  "http://0.0.0.0:8000/api/news-decision-accept"
+        external_api_url =  os.getenv("ML_BASE_URI") + "api/news-decision-accept"
         
         try:
             response = requests.post(
@@ -921,6 +923,120 @@ def process_news_alerts_and_call_decision_api(request):
         
     except Exception as e:
         logger.error(f"Error in process_news_alerts_and_call_decision_api: {str(e)}")
+        return Response({
+            'error': 'Internal server error',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def post_ml_decision_response(request):
+    """
+    Directly post ML decision API response to save alerts to database
+    
+    Expected payload:
+    {
+        "response": {
+            "1": {
+                "decision": "...",
+                "reason": "...",
+                "suggestion": "...",
+                "updated_costing": {
+                    "category_name": "...",
+                    "item": "...",
+                    "old_values": {...},
+                    "new_values": {...},
+                    "cost_impact": "...",
+                    "impact_reason": "..."
+                }
+            }
+        }
+    }
+    """
+    try:
+        # Validate request data
+        serializer = MLDecisionResponseSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                'error': 'Invalid request data',
+                'details': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        response_data = serializer.validated_data['response']
+        
+        # Use the same save_alerts_to_database function from daily_news_processor
+        alerts_saved = 0
+        alerts_errors = []
+        
+        for decision_key, alert_data in response_data.items():
+            try:
+                # Extract updated costing data if available
+                updated_costing = alert_data.get('updated_costing', {})
+                old_values = updated_costing.get('old_values', {})
+                new_values = updated_costing.get('new_values', {})
+                
+                # Create Alert object
+                alert = Alert.objects.create(
+                    decision_key=decision_key,
+                    decision=alert_data.get('decision', ''),
+                    reason=alert_data.get('reason', ''),
+                    suggestion=alert_data.get('suggestion', ''),
+                    
+                    # Updated costing information
+                    category_name=updated_costing.get('category_name'),
+                    item=updated_costing.get('item'),
+                    unit=updated_costing.get('unit'),
+                    quantity=updated_costing.get('quantity'),
+                    
+                    # Old values
+                    old_supplier_brand=old_values.get('supplier_brand'),
+                    old_rate_per_unit=old_values.get('rate_per_unit'),
+                    old_line_total=old_values.get('line_total'),
+                    
+                    # New values
+                    new_supplier_brand=new_values.get('supplier_brand'),
+                    new_rate_per_unit=new_values.get('rate_per_unit'),
+                    new_line_total=new_values.get('line_total'),
+                    
+                    # Impact details
+                    cost_impact=updated_costing.get('cost_impact'),
+                    impact_reason=updated_costing.get('impact_reason'),
+                    
+                    # Raw response for backup
+                    raw_response=alert_data
+                )
+                
+                alerts_saved += 1
+                logger.info(f'Saved alert {alert.alert_id} from direct ML response: {alert.decision[:50]}...')
+                
+            except Exception as e:
+                error_msg = f'Error saving alert for key {decision_key}: {str(e)}'
+                alerts_errors.append(error_msg)
+                logger.error(error_msg)
+        
+        # Prepare response
+        response_message = f'Successfully saved {alerts_saved} alerts to database'
+        if alerts_errors:
+            response_message += f' with {len(alerts_errors)} errors'
+        
+        response_data = {
+            'success': True,
+            'message': response_message,
+            'alerts_saved': alerts_saved,
+            'total_decision_keys': len(response_data),
+            'timestamp': timezone.now().isoformat()
+        }
+        
+        if alerts_errors:
+            response_data['errors'] = alerts_errors
+        
+        logger.info(f'Direct ML response processing completed: {alerts_saved} alerts saved')
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        logger.error(f"Error in post_ml_decision_response: {str(e)}")
         return Response({
             'error': 'Internal server error',
             'details': str(e)

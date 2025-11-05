@@ -181,7 +181,7 @@ class Command(BaseCommand):
             }
             
             # Use the exact URL from the curl command
-            url = 'http://0.0.0.0:8000/api/news_decision'
+            url = os.getenv('ML_BASE_URI') + '/api/news_decision'
 
             headers = {
                 'accept': 'application/json',
