@@ -11,7 +11,7 @@ from .serializers import (PDFExtractionSerializer, ProjectSerializer, ChatAccept
                          ProjectVersionOverheadSerializer)
 from chatapp.models import Session, Conversation, Messages
 from authentication.models import UserDetail
-from chatapp.utils import generate_costing_json_from_db, create_sessions_for_all_users_on_project_creation
+from chatapp.utils import generate_costing_json_from_db, create_sessions_for_all_users_on_project_creation, clear_all_project_data
 import logging
 import json
 import requests
@@ -20,7 +20,18 @@ logger = logging.getLogger(__name__)
 
 class PDFExtractionView(APIView):
     """
-    API endpoint to handle PDF extraction data and create/update projects with version control.
+    API endpoint to handle document extraction data with complete database reset.
+    
+    SUPPORTED FORMATS: PDF, DOC, DOCX, TXT, RTF
+    
+    WORKFLOW:
+    1. Validates that uploaded file is in document format only
+    2. Clears ALL existing project data from database (projects, costs, overheads, sessions, conversations, messages)
+    3. Creates new project with incoming data
+    4. Creates sessions and conversations for ALL verified and active users
+    5. Returns comprehensive results including clearing statistics and session creation results
+    
+    This ensures a fresh start with each document extraction and only accepts document formats.
     """
     permission_classes = [IsAuthenticated]
     
@@ -30,6 +41,24 @@ class PDFExtractionView(APIView):
         if not filename:
             return Response(
                 {'error': 'Filename parameter is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate document format - only allow document formats
+        allowed_extensions = ['.pdf', '.doc', '.docx', '.txt', '.rtf']
+        file_extension = None
+        
+        # Extract file extension
+        if '.' in filename:
+            file_extension = '.' + filename.split('.')[-1].lower()
+        
+        if not file_extension or file_extension not in allowed_extensions:
+            return Response(
+                {
+                    'error': 'Invalid file format. Only document formats are allowed.',
+                    'allowed_formats': ['PDF', 'DOC', 'DOCX', 'TXT', 'RTF'],
+                    'provided_filename': filename
+                }, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -44,56 +73,39 @@ class PDFExtractionView(APIView):
         overhead_items = data.get('overheads', [])
         
         try:
+            # STEP 1: Clear all existing project data from database (separate transaction)
+            logger.info("Starting PDF extraction with complete data clearing")
+            clear_result = clear_all_project_data()
+            
+            if not clear_result['success']:
+                return Response(
+                    {'error': f'Failed to clear existing data: {clear_result["error"]}'}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            logger.info(f"Successfully cleared existing data: {clear_result['cleared_counts']}")
+            
+            # STEP 2-4: Create project and related data (separate transaction)
             with transaction.atomic():
-                # Find or create project
-                project, created = Projects.objects.get_or_create(
+                # STEP 2: Create new project with the incoming data
+                project = Projects.objects.create(
                     name=project_data['name'],
-                    defaults={
-                        'location': project_data.get('location'),
-                        'start_date': project_data.get('start_date'),
-                        'end_date': project_data.get('end_date'),
-                        'total_cost': project_data.get('total_cost')
-                    }
+                    location=project_data.get('location'),
+                    start_date=project_data.get('start_date'),
+                    end_date=project_data.get('end_date'),
+                    total_cost=project_data.get('total_cost')
                 )
                 
-                # Set change tracking attributes after creation/retrieval
-                if created:
-                    project._changed_by = f"PDF Import: {filename}"
-                    project._change_reason = 'Created from PDF import'
+                # Set change tracking attributes
+                project._changed_by = f"PDF Import: {filename}"
+                project._change_reason = 'Created from PDF import - fresh start'
                 
-                # If project exists, update it and create a new version if needed
-                if not created:
-                    update_fields = {}
-                    tracked_fields = ['location', 'start_date', 'end_date', 'total_cost']
-                    
-                    for field in tracked_fields:
-                        if field in project_data and getattr(project, field) != project_data[field]:
-                            update_fields[field] = project_data[field]
-                    
-                    if update_fields:
-                        # Set change tracking attributes
-                        project._changed_by = f"PDF Import: {filename}"
-                        project._change_reason = 'Updated from PDF import'
-                        
-                        # Update fields
-                        for field, value in update_fields.items():
-                            setattr(project, field, value)
-                        project.save()
+                logger.info(f"Created new project: {project.name} (ID: {project.id})")
                 
-                # Handle project costs
+                # STEP 3: Create project costs
+                costs_created = 0
                 if cost_items:
-                    # Get existing cost items to compare
-                    existing_costs = {cost.id: cost for cost in project.costs.all()}
-                    
                     for item in cost_items:
-                        # Try to find existing cost item with same description and category
-                        existing_cost = next(
-                            (cost for cost in existing_costs.values() 
-                             if cost.item_description == item['item_description'] 
-                             and cost.category_code == item['category_code']),
-                            None
-                        )
-                        
                         cost_data = {
                             'project': project,
                             'category_code': item['category_code'],
@@ -107,42 +119,17 @@ class PDFExtractionView(APIView):
                             'category_total': item.get('category_total')
                         }
                         
-                        if existing_cost:
-                            # Update existing cost item
-                            existing_cost._changed_by = f"PDF Import: {filename}"
-                            existing_cost._change_reason = 'Updated from PDF import'
-                            
-                            for field, value in cost_data.items():
-                                if field != 'project':
-                                    setattr(existing_cost, field, value)
-                            existing_cost.save()
-                            
-                            # Remove from existing_costs dict to track which items were not in the import
-                            if existing_cost.id in existing_costs:
-                                del existing_costs[existing_cost.id]
-                        else:
-                            # Create new cost item
-                            new_cost = ProjectCosts.objects.create(**cost_data)
-                            new_cost._changed_by = f"PDF Import: {filename}"
-                            new_cost._change_reason = 'Created from PDF import'
-                    
-                    # Delete any cost items that were not in the import
-                    for cost_to_delete in existing_costs.values():
-                        cost_to_delete.delete()
+                        new_cost = ProjectCosts.objects.create(**cost_data)
+                        new_cost._changed_by = f"PDF Import: {filename}"
+                        new_cost._change_reason = 'Created from PDF import - fresh start'
+                        costs_created += 1
                 
-                # Handle project overheads
+                logger.info(f"Created {costs_created} project cost items")
+                
+                # STEP 4: Create project overheads
+                overheads_created = 0
                 if overhead_items:
-                    # Get existing overheads to compare
-                    existing_overheads = {overhead.id: overhead for overhead in project.overheads.all()}
-                    
                     for item in overhead_items:
-                        # Try to find existing overhead with same type
-                        existing_overhead = next(
-                            (oh for oh in existing_overheads.values() 
-                             if oh.overhead_type == item['overhead_type']),
-                            None
-                        )
-                        
                         overhead_data = {
                             'project': project,
                             'overhead_type': item['overhead_type'],
@@ -152,85 +139,73 @@ class PDFExtractionView(APIView):
                             'amount': item['amount']
                         }
                         
-                        if existing_overhead:
-                            # Update existing overhead
-                            existing_overhead._changed_by = f"PDF Import: {filename}"
-                            existing_overhead._change_reason = 'Updated from PDF import'
-                            
-                            for field, value in overhead_data.items():
-                                if field != 'project':
-                                    setattr(existing_overhead, field, value)
-                            existing_overhead.save()
-                            
-                            # Remove from existing_overheads dict to track which items were not in the import
-                            if existing_overhead.id in existing_overheads:
-                                del existing_overheads[existing_overhead.id]
-                        else:
-                            # Create new overhead
-                            new_overhead = ProjectOverheads.objects.create(**overhead_data)
-                            new_overhead._changed_by = f"PDF Import: {filename}"
-                            new_overhead._change_reason = 'Created from PDF import'
-                    
-                    # Delete any overheads that were not in the import
-                    for overhead_to_delete in existing_overheads.values():
-                        overhead_to_delete.delete()
+                        new_overhead = ProjectOverheads.objects.create(**overhead_data)
+                        new_overhead._changed_by = f"PDF Import: {filename}"
+                        new_overhead._change_reason = 'Created from PDF import - fresh start'
+                        overheads_created += 1
                 
-                # Create sessions for all users if this is a new project
-                session_creation_result = None
-                if created:
-                    try:
-                        logger.info(f"New project created: {project.name}. Creating sessions for all users.")
-                        session_creation_result = create_sessions_for_all_users_on_project_creation(project)
-                        logger.info(f"Session creation completed: {session_creation_result}")
-                    except Exception as session_error:
-                        logger.error(f"Error creating sessions for all users: {str(session_error)}", exc_info=True)
-                        session_creation_result = {
-                            "success": False,
-                            "error": f"Failed to create sessions: {str(session_error)}"
-                        }
-                
-                # Get current user's session info for response
-                session_created = False
-                session_id = None
-                conversation_id = None
-                try:
-                    user_detail = UserDetail.objects.filter(email=request.user.email).first()
-                    if user_detail:
-                        user_session = Session.objects.filter(
-                            user_id=user_detail,
-                            project_id=project
-                        ).first()
-                        if user_session:
-                            session_id = user_session.session_id
-                            session_created = True
-                            # Get conversation for this session
-                            conversation = Conversation.objects.filter(session=user_session).first()
-                            if conversation:
-                                conversation_id = conversation.conversation_id
-                except Exception as e:
-                    logger.error(f"Error getting user session info: {str(e)}")
-                
-                # Return the updated project with all related data
-                project_serializer = ProjectSerializer(instance=project)
-                response_data = {
-                    'status': 'success',
-                    'message': 'Project created/updated successfully',
-                    'project': project_serializer.data,
-                    'chat_session': {
-                        'created': session_created,
-                        'session_id': session_id,
-                        'conversation_id': conversation_id
-                    }
+                logger.info(f"Created {overheads_created} project overhead items")
+            
+            # STEP 5: Create sessions and conversations for ALL users (separate transaction)
+            session_creation_result = None
+            try:
+                logger.info(f"Creating sessions for all users for new project: {project.name}")
+                session_creation_result = create_sessions_for_all_users_on_project_creation(project)
+                logger.info(f"Session creation completed: {session_creation_result}")
+            except Exception as session_error:
+                logger.error(f"Error creating sessions for all users: {str(session_error)}", exc_info=True)
+                session_creation_result = {
+                    "success": False,
+                    "error": f"Failed to create sessions: {str(session_error)}"
                 }
-                
-                # Include session creation results for new projects
-                if created and session_creation_result:
-                    response_data['session_creation'] = session_creation_result
-                
-                return Response(response_data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
+            
+            # Get current user's session info for response
+            session_created = False
+            session_id = None
+            conversation_id = None
+            try:
+                user_detail = UserDetail.objects.filter(email=request.user.email).first()
+                if user_detail:
+                    user_session = Session.objects.filter(
+                        user_id=user_detail,
+                        project_id=project
+                    ).first()
+                    if user_session:
+                        session_id = user_session.session_id
+                        session_created = True
+                        # Get conversation for this session
+                        conversation = Conversation.objects.filter(session=user_session).first()
+                        if conversation:
+                            conversation_id = conversation.conversation_id
+            except Exception as e:
+                logger.error(f"Error getting user session info: {str(e)}")
+            
+            # Return the new project with all related data
+            project_serializer = ProjectSerializer(instance=project)
+            response_data = {
+                'status': 'success',
+                'message': 'All existing data cleared and new project created successfully',
+                'project': project_serializer.data,
+                'data_clearing': clear_result,
+                'creation_summary': {
+                    'costs_created': costs_created,
+                    'overheads_created': overheads_created
+                },
+                'chat_session': {
+                    'created': session_created,
+                    'session_id': session_id,
+                    'conversation_id': conversation_id
+                }
+            }
+            
+            # Include session creation results
+            if session_creation_result:
+                response_data['session_creation'] = session_creation_result
+            
+            return Response(response_data, status=status.HTTP_201_CREATED)
                 
         except Exception as e:
-            logger.error(f"Error processing PDF import: {str(e)}", exc_info=True)
+            logger.error(f"Error processing PDF import with data clearing: {str(e)}", exc_info=True)
             return Response(
                 {'error': f'Failed to process PDF import: {str(e)}'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

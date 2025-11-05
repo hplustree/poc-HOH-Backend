@@ -96,18 +96,18 @@ class ProjectVersion(VersionNumber):
 class ProjectCosts(models.Model):
     """Project costs/line items with version control"""
     project = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name='costs')
-    category_code = models.CharField(max_length=10)
-    category_name = models.CharField(max_length=100)
-    item_description = models.CharField(max_length=255)
+    category_code = models.CharField(max_length=10, blank=True, null=True)
+    category_name = models.CharField(max_length=100, blank=True, null=True)
+    item_description = models.CharField(max_length=255, blank=True, null=True)
     supplier_brand = models.CharField(max_length=150, blank=True, null=True)
     unit = models.CharField(max_length=50, blank=True, null=True)
-    quantity = models.DecimalField(max_digits=15, decimal_places=2)
-    rate_per_unit = models.DecimalField(max_digits=15, decimal_places=2)
-    line_total = models.DecimalField(max_digits=15, decimal_places=2)
+    quantity = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    rate_per_unit = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    line_total = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     category_total = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    version_number = models.IntegerField(default=1)
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
+    version_number = models.IntegerField(default=1, blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
     
     # Fields for tracking changes
     _changed_by = None
@@ -123,8 +123,9 @@ class ProjectCosts(models.Model):
 
     def save(self, *args, **kwargs):
         """Override save to implement automatic versioning"""
-        # Calculate line_total automatically
-        self.line_total = self.quantity * self.rate_per_unit
+        # Calculate line_total automatically if quantity and rate_per_unit are not None
+        if self.quantity is not None and self.rate_per_unit is not None:
+            self.line_total = self.quantity * self.rate_per_unit
         
         is_new = self.pk is None
         
@@ -137,7 +138,9 @@ class ProjectCosts(models.Model):
                             'supplier_brand', 'unit', 'quantity', 'rate_per_unit', 'category_total']
             
             # Also check if line_total would change due to quantity/rate changes
-            new_line_total = self.quantity * self.rate_per_unit
+            new_line_total = None
+            if self.quantity is not None and self.rate_per_unit is not None:
+                new_line_total = self.quantity * self.rate_per_unit
             line_total_changed = new_line_total != original.line_total
             
             has_changes = line_total_changed or any(
@@ -177,16 +180,16 @@ class ProjectCostVersion(VersionNumber):
     """Version history for ProjectCosts"""
     project_cost = models.ForeignKey(ProjectCosts, on_delete=models.CASCADE, related_name='versions')
     project = models.ForeignKey(Projects, on_delete=models.CASCADE)
-    category_code = models.CharField(max_length=10)
-    category_name = models.CharField(max_length=100)
-    item_description = models.CharField(max_length=255)
+    category_code = models.CharField(max_length=10, blank=True, null=True)
+    category_name = models.CharField(max_length=100, blank=True, null=True)
+    item_description = models.CharField(max_length=255, blank=True, null=True)
     supplier_brand = models.CharField(max_length=150, blank=True, null=True)
     unit = models.CharField(max_length=50, blank=True, null=True)
-    quantity = models.DecimalField(max_digits=15, decimal_places=2)
-    rate_per_unit = models.DecimalField(max_digits=15, decimal_places=2)
-    line_total = models.DecimalField(max_digits=15, decimal_places=2)
+    quantity = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    rate_per_unit = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    line_total = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     category_total = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    version_number = models.IntegerField()
+    version_number = models.IntegerField(blank=True, null=True)
     change_reason = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -200,14 +203,14 @@ class ProjectCostVersion(VersionNumber):
 class ProjectOverheads(models.Model):
     """Project overheads with version control"""
     project = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name='overheads')
-    overhead_type = models.CharField(max_length=50)
+    overhead_type = models.CharField(max_length=50, blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, null=True)
     basis = models.CharField(max_length=100, blank=True, null=True)
-    percentage = models.DecimalField(max_digits=5, decimal_places=2)
-    amount = models.DecimalField(max_digits=15, decimal_places=2)
-    version_number = models.IntegerField(default=1)
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
+    percentage = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    version_number = models.IntegerField(default=1, blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
     
     # Fields for tracking changes
     _changed_by = None
@@ -264,12 +267,12 @@ class ProjectOverheadVersion(VersionNumber):
     """Version history for ProjectOverheads"""
     project_overhead = models.ForeignKey(ProjectOverheads, on_delete=models.CASCADE, related_name='versions')
     project = models.ForeignKey(Projects, on_delete=models.CASCADE)
-    overhead_type = models.CharField(max_length=50)
+    overhead_type = models.CharField(max_length=50, blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, null=True)
     basis = models.CharField(max_length=100, blank=True, null=True)
-    percentage = models.DecimalField(max_digits=5, decimal_places=2)
-    amount = models.DecimalField(max_digits=15, decimal_places=2)
-    version_number = models.IntegerField()
+    percentage = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    version_number = models.IntegerField(blank=True, null=True)
     change_reason = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:

@@ -675,6 +675,88 @@ def create_sessions_for_all_users_on_project_creation(project):
         }
 
 
+def clear_all_project_data():
+    """
+    Clear all existing project-related data from the database.
+    This includes projects, costs, overheads, sessions, conversations, and messages.
+    
+    Returns:
+        Dictionary with clearing operation results
+    """
+    try:
+        from django.db import transaction
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        logger.info("Starting to clear all existing project data from database")
+        
+        with transaction.atomic():
+            # Count existing records before deletion
+            projects_count = Projects.objects.count()
+            costs_count = ProjectCosts.objects.count()
+            overheads_count = ProjectOverheads.objects.count()
+            sessions_count = Session.objects.count()
+            conversations_count = Conversation.objects.count()
+            messages_count = Messages.objects.count()
+            
+            logger.info(f"Found existing data - Projects: {projects_count}, Costs: {costs_count}, "
+                       f"Overheads: {overheads_count}, Sessions: {sessions_count}, "
+                       f"Conversations: {conversations_count}, Messages: {messages_count}")
+            
+            # Clear all data in proper order (respecting foreign key constraints)
+            # 1. Clear messages first (depends on conversations and sessions)
+            Messages.objects.all().delete()
+            logger.info("Cleared all messages")
+            
+            # 2. Clear conversations (depends on sessions and projects)
+            Conversation.objects.all().delete()
+            logger.info("Cleared all conversations")
+            
+            # 3. Clear sessions (depends on projects and users)
+            Session.objects.all().delete()
+            logger.info("Cleared all sessions")
+            
+            # 4. Clear project costs and overheads (depends on projects)
+            ProjectCosts.objects.all().delete()
+            logger.info("Cleared all project costs")
+            
+            ProjectOverheads.objects.all().delete()
+            logger.info("Cleared all project overheads")
+            
+            # 5. Clear version tables
+            from budget.models import ProjectVersion, ProjectCostVersion, ProjectOverheadVersion
+            ProjectCostVersion.objects.all().delete()
+            ProjectOverheadVersion.objects.all().delete()
+            ProjectVersion.objects.all().delete()
+            logger.info("Cleared all version history tables")
+            
+            # 6. Finally clear projects
+            Projects.objects.all().delete()
+            logger.info("Cleared all projects")
+            
+            logger.info("Successfully cleared all project-related data from database")
+            
+            return {
+                "success": True,
+                "message": "All project data cleared successfully",
+                "cleared_counts": {
+                    "projects": projects_count,
+                    "costs": costs_count,
+                    "overheads": overheads_count,
+                    "sessions": sessions_count,
+                    "conversations": conversations_count,
+                    "messages": messages_count
+                }
+            }
+            
+    except Exception as e:
+        logger.error(f"Error clearing project data: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Failed to clear project data: {str(e)}"
+        }
+
+
 def get_user_latest_chat_info(user_detail):
     """
     Get the latest project_id, session_id, and conversation_id for a user
