@@ -10,8 +10,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write(
             self.style.WARNING(
-                '⚠️  This command is DEPRECATED!\n'
-                '💡 Use: python manage.py daily_news_processor\n'
-                '📝 The daily_news_processor command handles both news fetching and processing.'
+                'WARNING: This command is DEPRECATED!\n'
+                'Use: python manage.py daily_news_processor\n'
+                'The daily_news_processor command handles both news fetching and processing.'
             )
         )

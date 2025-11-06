@@ -59,12 +59,12 @@ def log_api_response(operation, success=True, details=None, error=None):
         error: Error message if operation failed
     """
     if success:
-        message = f"✅ {operation}"
+        message = f"SUCCESS: {operation}"
         if details:
             message += f" - {details}"
         logger.info(message)
     else:
-        message = f"❌ {operation} failed"
+        message = f"FAILED: {operation}"
         if error:
             message += f" - {error}"
         logger.error(message)

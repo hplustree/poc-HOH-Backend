@@ -14,9 +14,9 @@ class NewsConfig(AppConfig):
         # Only setup cron job when running the server
         if 'runserver' in sys.argv:
             try:
-                print("🔧 Auto-setting up cron job...")
+                print("Auto-setting up cron job...")
                 call_command('setup_cron')
-                print("✅ Cron job setup completed!")
+                print("Cron job setup completed!")
             except Exception as e:
-                print(f"⚠️  Warning: Could not setup cron job automatically: {e}")
-                print("💡 You can manually run: python manage.py setup_cron")
+                print(f"Warning: Could not setup cron job automatically: {e}")
+                print("You can manually run: python manage.py setup_cron")

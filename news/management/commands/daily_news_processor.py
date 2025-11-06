@@ -33,7 +33,7 @@ class Command(BaseCommand):
         """
         start_time = timezone.now()
         self.log_separator('DAILY NEWS PROCESSING STARTED')
-        print(f'🚀 Starting daily news processing at {start_time}')
+        print(f'Starting daily news processing at {start_time}')
         
         try:
             # Step 1: Fetch news from the endpoint
@@ -45,7 +45,7 @@ class Command(BaseCommand):
             latest_news = self.get_latest_news()
             
             if not latest_news:
-                print('⚠️  No news articles found in database')
+                print('WARNING: No news articles found in database')
                 return
             
             # Step 3: Send to decision API
@@ -55,12 +55,12 @@ class Command(BaseCommand):
             end_time = timezone.now()
             duration = (end_time - start_time).total_seconds()
             
-            print(f'✅ Daily news processing completed successfully!')
-            print(f'⏱️  Total execution time: {duration:.2f} seconds')
+            print(f'Daily news processing completed successfully!')
+            print(f'Total execution time: {duration:.2f} seconds')
             self.log_separator('DAILY NEWS PROCESSING COMPLETED')
             
         except Exception as e:
-            print(f'❌ Error in daily news processing: {str(e)}')
+            print(f'ERROR: Error in daily news processing: {str(e)}')
             self.logger.error(f'Daily news processing failed: {str(e)}', exc_info=True)
             self.log_separator('DAILY NEWS PROCESSING FAILED')
 
@@ -73,12 +73,12 @@ class Command(BaseCommand):
 
     def log_step(self, step_num, description):
         """Log a processing step"""
-        print(f'\n📋 STEP {step_num}: {description}')
+        print(f'\nSTEP {step_num}: {description}')
         print('-' * 50)
 
     def fetch_news_from_endpoint(self):
         try:
-            print('🌐 Calling news fetch API...')
+            print('Calling news fetch API...')
             
             # Use the exact URL from the curl command
             url = os.getenv('BASE_URI') + '/api/news/fetch/'
@@ -86,33 +86,33 @@ class Command(BaseCommand):
                 'Content-Type': 'application/json'
             }
             
-            print(f'📡 URL: {url}')
-            print(f'📋 Headers: {headers}')
+            print(f'URL: {url}')
+            print(f'Headers: {headers}')
             
             response = requests.post(url, headers=headers, timeout=120)
             response.raise_for_status()
             
-            print(f'✅ News fetch successful!')
-            print(f'📊 Status Code: {response.status_code}')
+            print(f'News fetch successful!')
+            print(f'Status Code: {response.status_code}')
             
             # Log response details
             if response.text:
                 try:
                     response_data = response.json()
-                    print(f'📈 Response Data: {json.dumps(response_data, indent=2)[:500]}...')
+                    print(f'Response Data: {json.dumps(response_data, indent=2)[:500]}...')
                 except json.JSONDecodeError:
-                    print(f'📄 Response Text: {response.text[:500]}...')
+                    print(f'Response Text: {response.text[:500]}...')
             
             self.logger.info(f'News fetch API call successful - Status: {response.status_code}')
                 
         except requests.RequestException as e:
             error_msg = f'Failed to fetch news from endpoint: {str(e)}'
-            print(f'❌ {error_msg}')
+            print(f'ERROR: {error_msg}')
             self.logger.error(error_msg)
             raise
         except Exception as e:
             error_msg = f'Unexpected error in news fetching: {str(e)}'
-            print(f'❌ {error_msg}')
+            print(f'ERROR: {error_msg}')
             self.logger.error(error_msg)
             raise
 
@@ -121,7 +121,7 @@ class Command(BaseCommand):
         Retrieves the latest news articles from the database
         """
         try:
-            print('🗄️  Querying database for latest news...')
+            print('Querying database for latest news...')
             
             # Get latest news articles ordered by publication date
             articles = NewsArticle.objects.order_by('-pub_date')[:20]  # Get configurable number of articles
@@ -150,11 +150,11 @@ class Command(BaseCommand):
                 }
                 news_list.append(news_item)
             
-            print(f'✅ Retrieved {len(news_list)} news articles from database')
+            print(f'Retrieved {len(news_list)} news articles from database')
             
             # Log sample articles
             if news_list:
-                print('📰 Sample articles:')
+                print('Sample articles:')
                 for i, article in enumerate(news_list[:3]):
                     print(f'  {i+1}. {article["title"][:80]}...')
             
@@ -163,13 +163,13 @@ class Command(BaseCommand):
             
         except Exception as e:
             error_msg = f'Error retrieving news from database: {str(e)}'
-            print(f'❌ {error_msg}')
+            print(f'ERROR: {error_msg}')
             self.logger.error(error_msg)
             raise
 
     def send_to_decision_api(self, news_list):
         try:
-            print('🤖 Sending news to decision API...')
+            print('Sending news to decision API...')
             
             # Prepare the payload exactly as specified in the curl command
             payload = {
@@ -188,9 +188,9 @@ class Command(BaseCommand):
                 'Content-Type': 'application/json'
             }
             
-            print(f'📡 URL: {url}')
-            print(f'📋 Headers: {headers}')
-            print(f'📊 Payload count: {payload["news"]["count"]} articles')
+            print(f'URL: {url}')
+            print(f'Headers: {headers}')
+            print(f'Payload count: {payload["news"]["count"]} articles')
             
             response = requests.post(
                 url, 
@@ -200,24 +200,24 @@ class Command(BaseCommand):
             )
             response.raise_for_status()
             
-            print(f'✅ Decision API call successful!')
-            print(f'📊 Status Code: {response.status_code}')
+            print(f'Decision API call successful!')
+            print(f'Status Code: {response.status_code}')
             
             # Log the complete response as requested
             print('\n' + '='*60)
-            print('📋 DECISION API RESPONSE LOG')
+            print('DECISION API RESPONSE LOG')
             print('='*60)
             
             # Log response headers
-            print(f'📋 Response Headers: {dict(response.headers)}')
-            print(f'📊 Response Status: {response.status_code}')
-            print(f'⏱️  Response Time: {response.elapsed.total_seconds():.2f} seconds')
+            print(f'Response Headers: {dict(response.headers)}')
+            print(f'Response Status: {response.status_code}')
+            print(f'Response Time: {response.elapsed.total_seconds():.2f} seconds')
             print('-' * 60)
             
             try:
                 response_json = response.json()
                 formatted_response = json.dumps(response_json, indent=2)
-                print('📄 Response Body (JSON):')
+                print('Response Body (JSON):')
                 print(formatted_response)
                 
                 # Save alerts to database
@@ -230,7 +230,7 @@ class Command(BaseCommand):
                 self.logger.info(f'Decision API response body: {formatted_response}')
                 
             except json.JSONDecodeError:
-                print('📄 Response Body (Text):')
+                print('Response Body (Text):')
                 print(response.text)
                 
                 # Log to file as well
@@ -240,17 +240,17 @@ class Command(BaseCommand):
                 self.logger.info(f'Decision API response body (text): {response.text}')
                 
             print('='*60)
-            print('📋 END DECISION API RESPONSE LOG')
+            print('END DECISION API RESPONSE LOG')
             print('='*60 + '\n')
             
         except requests.RequestException as e:
             error_msg = f'Failed to send news to decision API: {str(e)}'
-            print(f'❌ {error_msg}')
+            print(f'ERROR: {error_msg}')
             self.logger.error(error_msg)
             raise
         except Exception as e:
             error_msg = f'Unexpected error in decision API call: {str(e)}'
-            print(f'❌ {error_msg}')
+            print(f'ERROR: {error_msg}')
             self.logger.error(error_msg)
             raise
 
@@ -259,10 +259,10 @@ class Command(BaseCommand):
         Save decision API response alerts to the database
         """
         try:
-            print('💾 Saving alerts to database...')
+            print('Saving alerts to database...')
             
             if 'response' not in response_data:
-                print('⚠️  No response data found to save')
+                print('WARNING: No response data found to save')
                 return
             
             alerts_saved = 0
@@ -307,18 +307,18 @@ class Command(BaseCommand):
                     )
                     
                     alerts_saved += 1
-                    print(f'✅ Saved alert {alert.alert_id}: {alert.decision[:50]}...')
+                    print(f'Saved alert {alert.alert_id}: {alert.decision[:50]}...')
                     
                 except Exception as e:
-                    print(f'❌ Error saving alert for key {decision_key}: {str(e)}')
+                    print(f'ERROR: Error saving alert for key {decision_key}: {str(e)}')
                     self.logger.error(f'Error saving alert for key {decision_key}: {str(e)}')
             
-            print(f'💾 Successfully saved {alerts_saved} alerts to database')
+            print(f'Successfully saved {alerts_saved} alerts to database')
             self.logger.info(f'Saved {alerts_saved} alerts to database')
             
         except Exception as e:
             error_msg = f'Error saving alerts to database: {str(e)}'
-            print(f'❌ {error_msg}')
+            print(f'ERROR: {error_msg}')
             self.logger.error(error_msg)
 
     def add_arguments(self, parser):

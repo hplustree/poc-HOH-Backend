@@ -36,12 +36,12 @@ class Command(BaseCommand):
             cron_command = f"{cron_time} cd {project_path} && {python_path} manage.py daily_news_processor >> {log_file} 2>&1"
             
             self.stdout.write(
-                self.style.SUCCESS('🔧 Setting up cron job for daily news processing...')
+                self.style.SUCCESS('Setting up cron job for daily news processing...')
             )
-            self.stdout.write(f'📅 Schedule: {self.format_cron_time(cron_time)} ({cron_time})')
-            self.stdout.write(f'📁 Project: {project_path}')
-            self.stdout.write(f'🐍 Python: {python_path}')
-            self.stdout.write(f'📝 Logs: {log_file}')
+            self.stdout.write(f'Schedule: {self.format_cron_time(cron_time)} ({cron_time})')
+            self.stdout.write(f'Project: {project_path}')
+            self.stdout.write(f'Python: {python_path}')
+            self.stdout.write(f'Logs: {log_file}')
             
             # Get current crontab
             try:
@@ -65,13 +65,13 @@ class Command(BaseCommand):
             
             if process.returncode == 0:
                 self.stdout.write(
-                    self.style.SUCCESS('✅ Cron job successfully configured!')
+                    self.style.SUCCESS('Cron job successfully configured!')
                 )
-                self.stdout.write(f'🎯 The job will run {self.format_cron_time(cron_time)}')
-                self.stdout.write('📊 Check logs for execution details')
+                self.stdout.write(f'The job will run {self.format_cron_time(cron_time)}')
+                self.stdout.write('Check logs for execution details')
                 
                 # Show current crontab
-                self.stdout.write('\n📋 Current cron jobs:')
+                self.stdout.write('\nCurrent cron jobs:')
                 try:
                     subprocess.run(['crontab', '-l'], check=True)
                 except subprocess.CalledProcessError:
@@ -79,12 +79,12 @@ class Command(BaseCommand):
                     
             else:
                 self.stdout.write(
-                    self.style.ERROR('❌ Failed to set up cron job')
+                    self.style.ERROR('Failed to set up cron job')
                 )
                 
         except Exception as e:
             self.stdout.write(
-                self.style.ERROR(f'❌ Error setting up cron job: {str(e)}')
+                self.style.ERROR(f'Error setting up cron job: {str(e)}')
             )
 
     def find_python_executable(self, project_path):
@@ -132,16 +132,16 @@ class Command(BaseCommand):
             
             if process.returncode == 0:
                 self.stdout.write(
-                    self.style.SUCCESS('✅ Cron job removed successfully!')
+                    self.style.SUCCESS('Cron job removed successfully!')
                 )
             else:
                 self.stdout.write(
-                    self.style.ERROR('❌ Failed to remove cron job')
+                    self.style.ERROR('Failed to remove cron job')
                 )
                 
         except Exception as e:
             self.stdout.write(
-                self.style.ERROR(f'❌ Error removing cron job: {str(e)}')
+                self.style.ERROR(f'Error removing cron job: {str(e)}')
             )
 
     def get_cron_time_from_env(self):
@@ -153,10 +153,10 @@ class Command(BaseCommand):
             # Default fallback to 3 AM
             cron_time = "0 3 * * *"
             self.stdout.write(
-                self.style.WARNING('⚠️  DAILY_NEWS_CRON_TIME not found, using default: 3:00 AM')
+                self.style.WARNING('WARNING: DAILY_NEWS_CRON_TIME not found, using default: 3:00 AM')
             )
         else:
-            self.stdout.write(f'📋 Using cron time from environment: {cron_time}')
+            self.stdout.write(f'Using cron time from environment: {cron_time}')
             
         return cron_time
 

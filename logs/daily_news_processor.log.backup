@@ -38,16 +38,16 @@ Error in daily news processing: unsupported operand type(s) for +: 'NoneType' an
 ============================================================
                DAILY NEWS PROCESSING STARTED                
 ============================================================
-Starting Starting daily news processing at 2025-10-13 12:50:02.019598+00:00
+🚀 Starting daily news processing at 2025-10-13 12:50:02.019598+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -68,35 +68,35 @@ Response Data: Response Data: {
       "articles_updated": 1,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
-SUCCESS: Retrieved 20 news articles from database
-Sample Sample articles:
+🗄️  Querying database for latest news...
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
   1. Debt capital desks may leak as banks start M&A financing...
   2. ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives...
   3. Vets to boycott Pb’s milk-yield competitions starting today...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://0.0.0.0:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 20 articles
-SUCCESS: Decision API call successful!
-Status Status Code: 200
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
 
 ============================================================
-STEP DECISION API RESPONSE LOG
+📋 DECISION API RESPONSE LOG
 ============================================================
 {
   "response": "NO decision changes required - news does not impact project costing"
 }
 ============================================================
-STEP END DECISION API RESPONSE LOG
+📋 END DECISION API RESPONSE LOG
 ============================================================
-SUCCESS: Daily news processing completed successfully!
-Response Time:  Total execution time: 11.17 seconds
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 11.17 seconds
 
 ============================================================
               DAILY NEWS PROCESSING COMPLETED               
@@ -113,13 +113,13 @@ TypeError: unsupported operand type(s) for +: 'NoneType' and 'str'
 ============================================================
                DAILY NEWS PROCESSING STARTED                
 ============================================================
-Starting Starting daily news processing at 2025-10-13 13:08:01.592080+00:00
+🚀 Starting daily news processing at 2025-10-13 13:08:01.592080+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-ERROR: Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
-ERROR: Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
+🌐 Calling news fetch API...
+❌ Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+❌ Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
@@ -136,13 +136,13 @@ TypeError: unsupported operand type(s) for +: 'NoneType' and 'str'
 ============================================================
                DAILY NEWS PROCESSING STARTED                
 ============================================================
-Starting Starting daily news processing at 2025-10-13 13:10:01.930986+00:00
+🚀 Starting daily news processing at 2025-10-13 13:10:01.930986+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-ERROR: Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
-ERROR: Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
+🌐 Calling news fetch API...
+❌ Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+❌ Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
@@ -159,13 +159,13 @@ TypeError: unsupported operand type(s) for +: 'NoneType' and 'str'
 ============================================================
                DAILY NEWS PROCESSING STARTED                
 ============================================================
-Starting Starting daily news processing at 2025-10-13 13:11:02.309934+00:00
+🚀 Starting daily news processing at 2025-10-13 13:11:02.309934+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-ERROR: Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
-ERROR: Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
+🌐 Calling news fetch API...
+❌ Unexpected error in news fetching: unsupported operand type(s) for +: 'NoneType' and 'str'
+❌ Error in daily news processing: unsupported operand type(s) for +: 'NoneType' and 'str'
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
@@ -182,16 +182,16 @@ ERROR: Error in daily news processing: unsupported operand type(s) for +: 'NoneT
 ============================================================
                DAILY NEWS PROCESSING STARTED                
 ============================================================
-Starting Starting daily news processing at 2025-10-13 13:12:01.667711+00:00
+🚀 Starting daily news processing at 2025-10-13 13:12:01.667711+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -212,40 +212,40 @@ Response Data: Response Data: {
       "articles_updated": 1,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
-SUCCESS: Retrieved 20 news articles from database
-Sample Sample articles:
+🗄️  Querying database for latest news...
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
   1. Debt capital desks may leak as banks start M&A financing...
   2. ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives...
   3. Vets to boycott Pb’s milk-yield competitions starting today...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://0.0.0.0:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 20 articles
-SUCCESS: Decision API call successful!
-Status Status Code: 200
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
 
 ============================================================
-STEP DECISION API RESPONSE LOG
+📋 DECISION API RESPONSE LOG
 ============================================================
-STEP Response Headers: {'date': 'Mon, 13 Oct 2025 13:12:05 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
-Status Response Status: 200
-Response Time:  Response Time: 2.27 seconds
+📋 Response Headers: {'date': 'Mon, 13 Oct 2025 13:12:05 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 2.27 seconds
 ------------------------------------------------------------
-Response Text: Response Body (JSON):
+📄 Response Body (JSON):
 {
   "response": "NO decision changes required - news does not impact project costing"
 }
 ============================================================
-STEP END DECISION API RESPONSE LOG
+📋 END DECISION API RESPONSE LOG
 ============================================================
-SUCCESS: Daily news processing completed successfully!
-Response Time:  Total execution time: 6.23 seconds
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 6.23 seconds
 
 ============================================================
               DAILY NEWS PROCESSING COMPLETED               
@@ -262,16 +262,16 @@ Response Time:  Total execution time: 6.23 seconds
 ============================================================
                DAILY NEWS PROCESSING STARTED                
 ============================================================
-Starting Starting daily news processing at 2025-10-13 13:24:02.268896+00:00
+🚀 Starting daily news processing at 2025-10-13 13:24:02.268896+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -292,41 +292,41 @@ Response Data: Response Data: {
       "articles_updated": 1,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>, <NewsArticle: Nearly half of college seats vacant despite extended admission rounds>, <NewsArticle: Over 1.2K students shortlisted at Delhi University’s Job Mela>, <NewsArticle: ‘Made-in-India’ 4G stack is export ready, 1GB data costs less than a cup of tea today': PM Modi>, <NewsArticle: Gemini Daily Horoscope Today, October 9, 2025: Mercury wants you to ask the question everyone avoids>, <NewsArticle: October 09, 2025, Birthday Forecast: Discover what the next 12 months hold for you>, <NewsArticle: Bombay HC Reserves Order On Plea Against WeWork India IPO>, <NewsArticle: Numerology horoscope today, October 09, 2025: What your name's first letter reveals today>]>
-SUCCESS: Retrieved 20 news articles from database
-Sample Sample articles:
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
   1. Debt capital desks may leak as banks start M&A financing...
   2. ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives...
   3. Vets to boycott Pb’s milk-yield competitions starting today...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://localhost:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 20 articles
-SUCCESS: Decision API call successful!
-Status Status Code: 200
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
 
 ============================================================
-STEP DECISION API RESPONSE LOG
+📋 DECISION API RESPONSE LOG
 ============================================================
-STEP Response Headers: {'date': 'Mon, 13 Oct 2025 13:24:06 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
-Status Response Status: 200
-Response Time:  Response Time: 2.17 seconds
+📋 Response Headers: {'date': 'Mon, 13 Oct 2025 13:24:06 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 2.17 seconds
 ------------------------------------------------------------
-Response Text: Response Body (JSON):
+📄 Response Body (JSON):
 {
   "response": "NO decision changes required - news does not impact project costing"
 }
 ============================================================
-STEP END DECISION API RESPONSE LOG
+📋 END DECISION API RESPONSE LOG
 ============================================================
-SUCCESS: Daily news processing completed successfully!
-Response Time:  Total execution time: 6.40 seconds
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 6.40 seconds
 
 ============================================================
               DAILY NEWS PROCESSING COMPLETED               
@@ -367,16 +367,16 @@ Response Time:  Total execution time: 6.40 seconds
 ============================================================
                DAILY NEWS PROCESSING STARTED                
 ============================================================
-Starting Starting daily news processing at 2025-10-13 13:36:02.085865+00:00
+🚀 Starting daily news processing at 2025-10-13 13:36:02.085865+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -397,33 +397,33 @@ Response Data: Response Data: {
       "articles_updated": 1,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>, <NewsArticle: Nearly half of college seats vacant despite extended admission rounds>, <NewsArticle: Over 1.2K students shortlisted at Delhi University’s Job Mela>, <NewsArticle: ‘Made-in-India’ 4G stack is export ready, 1GB data costs less than a cup of tea today': PM Modi>, <NewsArticle: Gemini Daily Horoscope Today, October 9, 2025: Mercury wants you to ask the question everyone avoids>, <NewsArticle: October 09, 2025, Birthday Forecast: Discover what the next 12 months hold for you>, <NewsArticle: Bombay HC Reserves Order On Plea Against WeWork India IPO>]>
-SUCCESS: Retrieved 20 news articles from database
-Sample Sample articles:
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
   1. Cement Prices Drop Significantly...
   2. Debt capital desks may leak as banks start M&A financing...
   3. ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://localhost:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 20 articles
-SUCCESS: Decision API call successful!
-Status Status Code: 200
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
 
 ============================================================
-STEP DECISION API RESPONSE LOG
+📋 DECISION API RESPONSE LOG
 ============================================================
-STEP Response Headers: {'date': 'Mon, 13 Oct 2025 13:36:05 GMT', 'server': 'uvicorn', 'content-length': '1261', 'content-type': 'application/json'}
-Status Response Status: 200
-Response Time:  Response Time: 30.06 seconds
+📋 Response Headers: {'date': 'Mon, 13 Oct 2025 13:36:05 GMT', 'server': 'uvicorn', 'content-length': '1261', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 30.06 seconds
 ------------------------------------------------------------
-Response Text: Response Body (JSON):
+📄 Response Body (JSON):
 {
   "response": {
     "1": {
@@ -452,10 +452,10 @@ Response Text: Response Body (JSON):
   }
 }
 ============================================================
-STEP END DECISION API RESPONSE LOG
+📋 END DECISION API RESPONSE LOG
 ============================================================
-SUCCESS: Daily news processing completed successfully!
-Response Time:  Total execution time: 34.20 seconds
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 34.20 seconds
 
 ============================================================
               DAILY NEWS PROCESSING COMPLETED               
@@ -497,16 +497,16 @@ Response Time:  Total execution time: 34.20 seconds
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-10-14 05:53:02.111396+00:00
+🚀 Starting daily news processing at 2025-10-14 05:53:02.111396+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -527,33 +527,33 @@ Response Data: Response Data: {
       "articles_updated": 0,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>]>
-SUCCESS: Retrieved 20 news articles from database
-Sample Sample articles:
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
   1. Livspace’s FY25 Loss Declines 43% To INR 243 Cr...
   2. IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25...
   3. From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://localhost:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 20 articles
-SUCCESS: Decision API call successful!
-Status Status Code: 200
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
 
 ============================================================
-STEP DECISION API RESPONSE LOG
+📋 DECISION API RESPONSE LOG
 ============================================================
-STEP Response Headers: {'date': 'Tue, 14 Oct 2025 05:53:05 GMT', 'server': 'uvicorn', 'content-length': '1271', 'content-type': 'application/json'}
-Status Response Status: 200
-Response Time:  Response Time: 27.21 seconds
+📋 Response Headers: {'date': 'Tue, 14 Oct 2025 05:53:05 GMT', 'server': 'uvicorn', 'content-length': '1271', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 27.21 seconds
 ------------------------------------------------------------
-Response Text: Response Body (JSON):
+📄 Response Body (JSON):
 {
   "response": {
     "1": {
@@ -582,11 +582,11 @@ Response Text: Response Body (JSON):
   }
 }
 ============================================================
-STEP END DECISION API RESPONSE LOG
+📋 END DECISION API RESPONSE LOG
 ============================================================
 
-SUCCESS: Daily news processing completed successfully!
-Response Time:  Total execution time: 31.25 seconds
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 31.25 seconds
 
 ============================================================
               DAILY NEWS PROCESSING COMPLETED               
@@ -597,17 +597,17 @@ Response Time:  Total execution time: 31.25 seconds
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-10-14 05:57:01.767728+00:00
+🚀 Starting daily news processing at 2025-10-14 05:57:01.767728+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
+🌐 Calling news fetch API...
 2025-10-14 05:57:05,775 - INFO - News fetch API call successful - Status: 200
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -628,23 +628,23 @@ Response Data: Response Data: {
       "articles_updated": 6,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 2025-10-14 05:57:05,786 - INFO - Retrieved 20 articles from database
 <QuerySet [<NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>]>
-SUCCESS: Retrieved 20 news articles from database
-Sample Sample articles:
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
   1. Livspace’s FY25 Loss Declines 43% To INR 243 Cr...
   2. IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25...
   3. From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://localhost:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 20 articles
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
 ⏳ Waiting for response from decision API...
 2025-10-14 05:57:28,805 - ERROR - Failed to send news to decision API: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
 2025-10-14 05:57:28,805 - ERROR - Daily news processing failed: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
@@ -656,8 +656,8 @@ Traceback (most recent call last):
   File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 1021, in raise_for_status
     raise HTTPError(http_error_msg, response=self)
 requests.exceptions.HTTPError: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
-ERROR: Failed to send news to decision API: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
-ERROR: Error in daily news processing: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
+❌ Failed to send news to decision API: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
+❌ Error in daily news processing: 500 Server Error: Internal Server Error for url: http://localhost:8000/api/news_decision
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
@@ -668,17 +668,17 @@ ERROR: Error in daily news processing: 500 Server Error: Internal Server Error f
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-10-14 05:59:02.161213+00:00
+🚀 Starting daily news processing at 2025-10-14 05:59:02.161213+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
+🌐 Calling news fetch API...
 2025-10-14 05:59:05,991 - INFO - News fetch API call successful - Status: 200
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -699,36 +699,36 @@ Response Data: Response Data: {
       "articles_updated": 6,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 2025-10-14 05:59:06,005 - INFO - Retrieved 20 articles from database
 <QuerySet [<NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>]>
-SUCCESS: Retrieved 20 news articles from database
-Sample Sample articles:
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
   1. Livspace’s FY25 Loss Declines 43% To INR 243 Cr...
   2. IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25...
   3. From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://localhost:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 20 articles
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
 ⏳ Waiting for response from decision API...
-SUCCESS: Decision API call successful!
-Status Status Code: 200
-Response Time:  Response Time: 22.72 seconds
+✅ Decision API call successful!
+📊 Status Code: 200
+⏱️  Response Time: 22.72 seconds
 
 ============================================================
-STEP DECISION API RESPONSE LOG
+📋 DECISION API RESPONSE LOG
 ============================================================
-STEP Response Headers: {'date': 'Tue, 14 Oct 2025 05:59:05 GMT', 'server': 'uvicorn', 'content-length': '1325', 'content-type': 'application/json'}
-Status Response Status: 200
-Response Time:  Response Time: 22.72 seconds
+📋 Response Headers: {'date': 'Tue, 14 Oct 2025 05:59:05 GMT', 'server': 'uvicorn', 'content-length': '1325', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 22.72 seconds
 ------------------------------------------------------------
-Response Text: Response Body (JSON):
+📄 Response Body (JSON):
 {
   "response": {
     "1": {
@@ -787,11 +787,11 @@ Response Text: Response Body (JSON):
   }
 }
 ============================================================
-STEP END DECISION API RESPONSE LOG
+📋 END DECISION API RESPONSE LOG
 ============================================================
 
-SUCCESS: Daily news processing completed successfully!
-Response Time:  Total execution time: 26.57 seconds
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 26.57 seconds
 
 ============================================================
               DAILY NEWS PROCESSING COMPLETED               
@@ -835,16 +835,16 @@ Response Time:  Total execution time: 26.57 seconds
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-10-14 06:24:02.157952+00:00
+🚀 Starting daily news processing at 2025-10-14 06:24:02.157952+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -865,33 +865,33 @@ Response Data: Response Data: {
       "articles_updated": 6,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>]>
-SUCCESS: Retrieved 20 news articles from database
-Sample Sample articles:
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
   1. Livspace’s FY25 Loss Declines 43% To INR 243 Cr...
   2. IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25...
   3. From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://localhost:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 20 articles
-SUCCESS: Decision API call successful!
-Status Status Code: 200
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
 
 ============================================================
-STEP DECISION API RESPONSE LOG
+📋 DECISION API RESPONSE LOG
 ============================================================
-STEP Response Headers: {'date': 'Tue, 14 Oct 2025 06:24:05 GMT', 'server': 'uvicorn', 'content-length': '1221', 'content-type': 'application/json'}
-Status Response Status: 200
-Response Time:  Response Time: 19.29 seconds
+📋 Response Headers: {'date': 'Tue, 14 Oct 2025 06:24:05 GMT', 'server': 'uvicorn', 'content-length': '1221', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 19.29 seconds
 ------------------------------------------------------------
-Response Text: Response Body (JSON):
+📄 Response Body (JSON):
 {
   "response": {
     "1": {
@@ -919,15 +919,15 @@ Response Text: Response Body (JSON):
     }
   }
 }
-Saving Saving alerts to database...
-SUCCESS: Saved alert 1: Renegotiate Ultratech Cement Rates for Foundation ...
-Saving Successfully saved 1 alerts to database
+💾 Saving alerts to database...
+✅ Saved alert 1: Renegotiate Ultratech Cement Rates for Foundation ...
+💾 Successfully saved 1 alerts to database
 ============================================================
-STEP END DECISION API RESPONSE LOG
+📋 END DECISION API RESPONSE LOG
 ============================================================
 
-SUCCESS: Daily news processing completed successfully!
-Response Time:  Total execution time: 23.35 seconds
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 23.35 seconds
 
 ============================================================
               DAILY NEWS PROCESSING COMPLETED               
@@ -971,16 +971,16 @@ Response Time:  Total execution time: 23.35 seconds
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-10-14 07:19:01.902223+00:00
+🚀 Starting daily news processing at 2025-10-14 07:19:01.902223+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -1001,33 +1001,33 @@ Response Data: Response Data: {
       "articles_updated": 6,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>, <NewsArticle: Jan Suraaj Party Launches Crowdfunding App Amidst Allegations Against Bihar Government>, <NewsArticle: Horoscope for October 9, 2025: Astrological Insights for Gemini, Capricorn, Libra, Leo, and All Sun >, <NewsArticle: Nirmala Sitharaman unveils statues of three South Indian saints in UP’s Ayodhya>]>
-SUCCESS: Retrieved 20 news articles from database
-Sample Sample articles:
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
   1. Livspace’s FY25 Loss Declines 43% To INR 243 Cr...
   2. IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25...
   3. From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://localhost:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 20 articles
-SUCCESS: Decision API call successful!
-Status Status Code: 200
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
 
 ============================================================
-STEP DECISION API RESPONSE LOG
+📋 DECISION API RESPONSE LOG
 ============================================================
-STEP Response Headers: {'date': 'Tue, 14 Oct 2025 07:19:05 GMT', 'server': 'uvicorn', 'content-length': '1235', 'content-type': 'application/json'}
-Status Response Status: 200
-Response Time:  Response Time: 23.42 seconds
+📋 Response Headers: {'date': 'Tue, 14 Oct 2025 07:19:05 GMT', 'server': 'uvicorn', 'content-length': '1235', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 23.42 seconds
 ------------------------------------------------------------
-Response Text: Response Body (JSON):
+📄 Response Body (JSON):
 {
   "response": {
     "1": {
@@ -1055,15 +1055,15 @@ Response Text: Response Body (JSON):
     }
   }
 }
-Saving Saving alerts to database...
-SUCCESS: Saved alert 2: Update Ultratech Cement Rates for Foundation Due t...
-Saving Successfully saved 1 alerts to database
+💾 Saving alerts to database...
+✅ Saved alert 2: Update Ultratech Cement Rates for Foundation Due t...
+💾 Successfully saved 1 alerts to database
 ============================================================
-STEP END DECISION API RESPONSE LOG
+📋 END DECISION API RESPONSE LOG
 ============================================================
 
-SUCCESS: Daily news processing completed successfully!
-Response Time:  Total execution time: 27.83 seconds
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 27.83 seconds
 
 ============================================================
               DAILY NEWS PROCESSING COMPLETED               
@@ -1130,16 +1130,16 @@ Response Time:  Total execution time: 27.83 seconds
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-10-15 07:19:02.286377+00:00
+🚀 Starting daily news processing at 2025-10-15 07:19:02.286377+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -1160,33 +1160,33 @@ Response Data: Response Data: {
       "articles_updated": 5,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Charli XCX Reveals Why She Turned Down Tour Documentary: Feel Like My Problem With...>, <NewsArticle: tata steel price>, <NewsArticle: HouseEazy Raises INR 150 Cr To Expand Beyond Delhi NCR>, <NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>, <NewsArticle: 'Lack Of Clarity About Gaza Peace Plan, Working Like Real Estate Project': Asaduddin Owaisi>]>
-SUCCESS: Retrieved 20 news articles from database
-Sample Sample articles:
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
   1. Charli XCX Reveals Why She Turned Down Tour Documentary: Feel Like My Problem Wi...
   2. tata steel price...
   3. HouseEazy Raises INR 150 Cr To Expand Beyond Delhi NCR...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://localhost:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 20 articles
-SUCCESS: Decision API call successful!
-Status Status Code: 200
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
 
 ============================================================
-STEP DECISION API RESPONSE LOG
+📋 DECISION API RESPONSE LOG
 ============================================================
-STEP Response Headers: {'date': 'Wed, 15 Oct 2025 07:19:05 GMT', 'server': 'uvicorn', 'content-length': '2496', 'content-type': 'application/json'}
-Status Response Status: 200
-Response Time:  Response Time: 46.50 seconds
+📋 Response Headers: {'date': 'Wed, 15 Oct 2025 07:19:05 GMT', 'server': 'uvicorn', 'content-length': '2496', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 46.50 seconds
 ------------------------------------------------------------
-Response Text: Response Body (JSON):
+📄 Response Body (JSON):
 {
   "response": {
     "1": {
@@ -1237,16 +1237,16 @@ Response Text: Response Body (JSON):
     }
   }
 }
-Saving Saving alerts to database...
-SUCCESS: Saved alert 3: Renegotiate Tata Steel Rates for Structural Frame ...
-SUCCESS: Saved alert 4: Update Costing for Foundation Works Due to 10% Pri...
-Saving Successfully saved 2 alerts to database
+💾 Saving alerts to database...
+✅ Saved alert 3: Renegotiate Tata Steel Rates for Structural Frame ...
+✅ Saved alert 4: Update Costing for Foundation Works Due to 10% Pri...
+💾 Successfully saved 2 alerts to database
 ============================================================
-STEP END DECISION API RESPONSE LOG
+📋 END DECISION API RESPONSE LOG
 ============================================================
 
-SUCCESS: Daily news processing completed successfully!
-Response Time:  Total execution time: 50.63 seconds
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 50.63 seconds
 
 ============================================================
               DAILY NEWS PROCESSING COMPLETED               
@@ -1266,16 +1266,16 @@ Response Time:  Total execution time: 50.63 seconds
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-10-16 07:19:02.248014+00:00
+🚀 Starting daily news processing at 2025-10-16 07:19:02.248014+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -1296,44 +1296,44 @@ Response Data: Response Data: {
       "articles_updated": 2,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Perez Hilton claims Charli XCX is "throwing shade at Taylor Swift" after she disses tour documentari>, <NewsArticle: Charli XCX Reveals Why She Turned Down Tour Documentary: Feel Like My Problem With...>, <NewsArticle: tata steel price>, <NewsArticle: HouseEazy Raises INR 150 Cr To Expand Beyond Delhi NCR>, <NewsArticle: Livspace’s FY25 Loss Declines 43% To INR 243 Cr>, <NewsArticle: IPO-Bound Livspace Claims Adjusted EBITDA Loss Halved in FY25>, <NewsArticle: From Malabar Hill to Malad, builders swoop in to redevelop Mumbai's ageing homes>, <NewsArticle: Cement Prices Drop Significantly>, <NewsArticle: Arnya Realestates Fund commits $47 mn across housing projects>, <NewsArticle: How Square Yards Is Turning AI Into A Growth Engine>, <NewsArticle: Arnya Realestates aims to deploy Rs 1,200 cr across residential projects by March>, <NewsArticle: Debt capital desks may leak as banks start M&A financing>, <NewsArticle: ‘Death to Spotify’ Event Draws Interest From Some Musicians to Try Alternatives>, <NewsArticle: Vets to boycott Pb’s milk-yield competitions starting today>, <NewsArticle: Pension revision for retd teachers may make PU cough up 70cr in arrears>, <NewsArticle: Canada Foreign Minister Anand Arrives In Delhi For Official Visit>, <NewsArticle: Climate disasters cost India $12 billion in 2025: Why ecology is key to economic growth>, <NewsArticle: Construction Sector Grows 11.97% in Telangana, Says Sridhar Babu>, <NewsArticle: Govt plans policy to make Delhi animation and VFX hub>, <NewsArticle: Small change! Banks seek RBI nod to stop SMS alerts for transactions below Rs 100>]>
-SUCCESS: Retrieved 20 news articles from database
-Sample Sample articles:
+✅ Retrieved 20 news articles from database
+📰 Sample articles:
   1. Perez Hilton claims Charli XCX is "throwing shade at Taylor Swift" after she dis...
   2. Charli XCX Reveals Why She Turned Down Tour Documentary: Feel Like My Problem Wi...
   3. tata steel price...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://localhost:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 20 articles
-SUCCESS: Decision API call successful!
-Status Status Code: 200
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 20 articles
+✅ Decision API call successful!
+📊 Status Code: 200
 
 ============================================================
-STEP DECISION API RESPONSE LOG
+📋 DECISION API RESPONSE LOG
 ============================================================
-STEP Response Headers: {'date': 'Thu, 16 Oct 2025 07:19:06 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
-Status Response Status: 200
-Response Time:  Response Time: 1.06 seconds
+📋 Response Headers: {'date': 'Thu, 16 Oct 2025 07:19:06 GMT', 'server': 'uvicorn', 'content-length': '82', 'content-type': 'application/json'}
+📊 Response Status: 200
+⏱️  Response Time: 1.06 seconds
 ------------------------------------------------------------
-Response Text: Response Body (JSON):
+📄 Response Body (JSON):
 {
   "response": "NO decision changes required - news does not impact project costing"
 }
-Saving Saving alerts to database...
-ERROR: Error saving alerts to database: 'str' object has no attribute 'items'
+💾 Saving alerts to database...
+❌ Error saving alerts to database: 'str' object has no attribute 'items'
 ============================================================
-STEP END DECISION API RESPONSE LOG
+📋 END DECISION API RESPONSE LOG
 ============================================================
 
-SUCCESS: Daily news processing completed successfully!
-Response Time:  Total execution time: 5.48 seconds
+✅ Daily news processing completed successfully!
+⏱️  Total execution time: 5.48 seconds
 
 ============================================================
               DAILY NEWS PROCESSING COMPLETED               
@@ -1356,16 +1356,16 @@ requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: http://0.0
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-10-29 05:49:02.057598+00:00
+🚀 Starting daily news processing at 2025-10-29 05:49:02.057598+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -1386,23 +1386,23 @@ Response Data: Response Data: {
       "articles_updated": 0,
       "articles_skipped...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Singapore's Lighthouse Canton to invest over $1.5 bln in India; eyes private credit, real estate>, <NewsArticle: Stanza Living To Raise $32 Mn From Accel, Motilal Oswal>]>
-SUCCESS: Retrieved 2 news articles from database
-Sample Sample articles:
+✅ Retrieved 2 news articles from database
+📰 Sample articles:
   1. Singapore's Lighthouse Canton to invest over $1.5 bln in India; eyes private cre...
   2. Stanza Living To Raise $32 Mn From Accel, Motilal Oswal...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://0.0.0.0:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 2 articles
-ERROR: Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
-ERROR: Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 2 articles
+❌ Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+❌ Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
@@ -1425,16 +1425,16 @@ requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: http://0.0
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-10-30 05:49:01.441568+00:00
+🚀 Starting daily news processing at 2025-10-30 05:49:01.441568+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -1455,24 +1455,24 @@ Response Data: Response Data: {
       "articles_updated": 1,
       "articles_skipped...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Swerve Strickland sends a one-word message amid rumors of AEW return>, <NewsArticle: Singapore's Lighthouse Canton to invest over $1.5 bln in India; eyes private credit, real estate>, <NewsArticle: Stanza Living To Raise $32 Mn From Accel, Motilal Oswal>]>
-SUCCESS: Retrieved 3 news articles from database
-Sample Sample articles:
+✅ Retrieved 3 news articles from database
+📰 Sample articles:
   1. Swerve Strickland sends a one-word message amid rumors of AEW return...
   2. Singapore's Lighthouse Canton to invest over $1.5 bln in India; eyes private cre...
   3. Stanza Living To Raise $32 Mn From Accel, Motilal Oswal...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://0.0.0.0:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 3 articles
-ERROR: Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
-ERROR: Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 3 articles
+❌ Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+❌ Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
@@ -1546,16 +1546,16 @@ requests.exceptions.ConnectionError: HTTPConnectionPool(host='0.0.0.0', port=800
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-10-31 05:49:01.891222+00:00
+🚀 Starting daily news processing at 2025-10-31 05:49:01.891222+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -1576,22 +1576,22 @@ Response Data: Response Data: {
       "articles_updated": 0,
       "articles_skipped...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Swerve Strickland sends a one-word message amid rumors of AEW return>]>
-SUCCESS: Retrieved 1 news articles from database
-Sample Sample articles:
+✅ Retrieved 1 news articles from database
+📰 Sample articles:
   1. Swerve Strickland sends a one-word message amid rumors of AEW return...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://0.0.0.0:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 1 articles
-ERROR: Failed to send news to decision API: HTTPConnectionPool(host='0.0.0.0', port=8000): Max retries exceeded with url: /api/news_decision (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7bbfb07b09d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
-ERROR: Error in daily news processing: HTTPConnectionPool(host='0.0.0.0', port=8000): Max retries exceeded with url: /api/news_decision (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7bbfb07b09d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 1 articles
+❌ Failed to send news to decision API: HTTPConnectionPool(host='0.0.0.0', port=8000): Max retries exceeded with url: /api/news_decision (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7bbfb07b09d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+❌ Error in daily news processing: HTTPConnectionPool(host='0.0.0.0', port=8000): Max retries exceeded with url: /api/news_decision (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7bbfb07b09d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
@@ -1614,16 +1614,16 @@ requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: http://0.0
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-11-01 05:49:01.628071+00:00
+🚀 Starting daily news processing at 2025-11-01 05:49:01.628071+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -1644,23 +1644,23 @@ Response Data: Response Data: {
       "articles_updated": 0,
       "articles_skipped...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets>, <NewsArticle: Indian woman captures Dubai Police patrolling crowded market on horseback: 'Streets bow to these kin>]>
-SUCCESS: Retrieved 2 news articles from database
-Sample Sample articles:
+✅ Retrieved 2 news articles from database
+📰 Sample articles:
   1. Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets...
   2. Indian woman captures Dubai Police patrolling crowded market on horseback: 'Stre...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://0.0.0.0:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 2 articles
-ERROR: Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
-ERROR: Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 2 articles
+❌ Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+❌ Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
@@ -1683,16 +1683,16 @@ requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: http://0.0
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-11-02 05:49:01.522926+00:00
+🚀 Starting daily news processing at 2025-11-02 05:49:01.522926+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -1713,24 +1713,24 @@ Response Data: Response Data: {
       "articles_updated": 2,
       "articles_skipped...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Uttar Pradesh Real Estate Gets A Boost With 15 New Projects Worth Rs 2,434 Crore>, <NewsArticle: Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets>, <NewsArticle: Indian woman captures Dubai Police patrolling crowded market on horseback: 'Streets bow to these kin>]>
-SUCCESS: Retrieved 3 news articles from database
-Sample Sample articles:
+✅ Retrieved 3 news articles from database
+📰 Sample articles:
   1. Uttar Pradesh Real Estate Gets A Boost With 15 New Projects Worth Rs 2,434 Crore...
   2. Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets...
   3. Indian woman captures Dubai Police patrolling crowded market on horseback: 'Stre...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://0.0.0.0:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 3 articles
-ERROR: Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
-ERROR: Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 3 articles
+❌ Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+❌ Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
@@ -1753,16 +1753,16 @@ requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: http://0.0
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-11-03 05:49:01.607040+00:00
+🚀 Starting daily news processing at 2025-11-03 05:49:01.607040+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -1783,24 +1783,24 @@ Response Data: Response Data: {
       "articles_updated": 1,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Uttar Pradesh Real Estate Gets A Boost With 15 New Projects Worth Rs 2,434 Crore>, <NewsArticle: Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets>, <NewsArticle: Indian woman captures Dubai Police patrolling crowded market on horseback: 'Streets bow to these kin>]>
-SUCCESS: Retrieved 3 news articles from database
-Sample Sample articles:
+✅ Retrieved 3 news articles from database
+📰 Sample articles:
   1. Uttar Pradesh Real Estate Gets A Boost With 15 New Projects Worth Rs 2,434 Crore...
   2. Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets...
   3. Indian woman captures Dubai Police patrolling crowded market on horseback: 'Stre...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://0.0.0.0:8000/api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 3 articles
-ERROR: Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
-ERROR: Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+🤖 Sending news to decision API...
+📡 URL: http://0.0.0.0:8000/api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 3 articles
+❌ Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+❌ Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
@@ -1823,16 +1823,16 @@ requests.exceptions.HTTPError: 404 Client Error: Not Found for url: http://local
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-11-04 05:49:01.569647+00:00
+🚀 Starting daily news processing at 2025-11-04 05:49:01.569647+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-SUCCESS: News fetch successful!
-Status Status Code: 200
-Response Data: Response Data: {
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+✅ News fetch successful!
+📊 Status Code: 200
+📈 Response Data: {
   "success": true,
   "message": "Sequential news data fetching completed",
   "summary": {
@@ -1853,24 +1853,24 @@ Response Data: Response Data: {
       "articles_updated": 0,
       "articles_skippe...
 
-STEP STEP 2: Retrieving latest news from database
+📋 STEP 2: Retrieving latest news from database
 --------------------------------------------------
-Querying  Querying database for latest news...
+🗄️  Querying database for latest news...
 <QuerySet [<NewsArticle: Uttar Pradesh Real Estate Gets A Boost With 15 New Projects Worth Rs 2,434 Crore>, <NewsArticle: Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets>, <NewsArticle: Indian woman captures Dubai Police patrolling crowded market on horseback: 'Streets bow to these kin>]>
-SUCCESS: Retrieved 3 news articles from database
-Sample Sample articles:
+✅ Retrieved 3 news articles from database
+📰 Sample articles:
   1. Uttar Pradesh Real Estate Gets A Boost With 15 New Projects Worth Rs 2,434 Crore...
   2. Viral Video Shows Dubai Police On Horse-Mounted Patrolling Crowded Streets...
   3. Indian woman captures Dubai Police patrolling crowded market on horseback: 'Stre...
 
-STEP STEP 3: Sending news to decision API
+📋 STEP 3: Sending news to decision API
 --------------------------------------------------
-Sending Sending news to decision API...
-URL: URL: http://localhost:8000//api/news_decision
-STEP Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
-Status Payload count: 3 articles
-ERROR: Failed to send news to decision API: 404 Client Error: Not Found for url: http://localhost:8000//api/news_decision
-ERROR: Error in daily news processing: 404 Client Error: Not Found for url: http://localhost:8000//api/news_decision
+🤖 Sending news to decision API...
+📡 URL: http://localhost:8000//api/news_decision
+📋 Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+📊 Payload count: 3 articles
+❌ Failed to send news to decision API: 404 Client Error: Not Found for url: http://localhost:8000//api/news_decision
+❌ Error in daily news processing: 404 Client Error: Not Found for url: http://localhost:8000//api/news_decision
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
@@ -1942,15 +1942,15 @@ requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=3
                DAILY NEWS PROCESSING STARTED                
 ============================================================
 
-Starting Starting daily news processing at 2025-11-06 05:49:05.118817+00:00
+🚀 Starting daily news processing at 2025-11-06 05:49:05.118817+00:00
 
-STEP STEP 1: Fetching news from external API
+📋 STEP 1: Fetching news from external API
 --------------------------------------------------
-Calling Calling news fetch API...
-URL: URL: http://localhost:3000/api/news/fetch/
-STEP Headers: {'Content-Type': 'application/json'}
-ERROR: Failed to fetch news from endpoint: HTTPConnectionPool(host='localhost', port=3000): Max retries exceeded with url: /api/news/fetch/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fe6d2f4bbb0>: Failed to establish a new connection: [Errno 111] Connection refused'))
-ERROR: Error in daily news processing: HTTPConnectionPool(host='localhost', port=3000): Max retries exceeded with url: /api/news/fetch/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fe6d2f4bbb0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+🌐 Calling news fetch API...
+📡 URL: http://localhost:3000/api/news/fetch/
+📋 Headers: {'Content-Type': 'application/json'}
+❌ Failed to fetch news from endpoint: HTTPConnectionPool(host='localhost', port=3000): Max retries exceeded with url: /api/news/fetch/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fe6d2f4bbb0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+❌ Error in daily news processing: HTTPConnectionPool(host='localhost', port=3000): Max retries exceeded with url: /api/news/fetch/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fe6d2f4bbb0>: Failed to establish a new connection: [Errno 111] Connection refused'))
 
 ============================================================
                 DAILY NEWS PROCESSING FAILED                
