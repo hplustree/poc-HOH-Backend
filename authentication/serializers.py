@@ -27,7 +27,7 @@ class UserDetailRegistrationSerializer(serializers.ModelSerializer):
         user_detail = UserDetail(**validated_data)
         user_detail.set_password(password)
         
-        # Generate OTP
+        # Generate OTP (user remains inactive until OTP verification)
         otp = user_detail.generate_otp()
         user_detail.save()
         
@@ -75,6 +75,6 @@ class OTPVerificationSerializer(serializers.Serializer):
 class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserDetail
-        fields = ('id', 'first_name', 'last_name', 'email', 'is_verified', 'created_at', 'updated_at')
-        read_only_fields = ('id', 'is_verified', 'created_at', 'updated_at')
+        fields = ('id', 'first_name', 'last_name', 'email', 'is_verified', 'is_active', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'is_verified', 'is_active', 'created_at', 'updated_at')
 

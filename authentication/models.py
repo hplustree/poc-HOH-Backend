@@ -55,13 +55,14 @@ class UserDetail(models.Model):
             self.save()
 
     def verify_otp(self, provided_otp):
-        """Verify the provided OTP"""
+        """Verify the provided OTP and activate user"""
         if not self.is_otp_valid(): 
             self.clear_expired_otp()
             return False
         
         if self.otp == provided_otp:
             self.is_verified = True
+            self.is_active = True  # Activate user only after OTP verification
             self.otp = None
             self.otp_created_at = None
             self.save()
