@@ -100,20 +100,22 @@ def generate_costing_json_from_db(project_id=None, include_wrapper=False):
         cost_line_items = []
         
         for cost in project_costs:
-            category_totals[cost.category_code] += float(cost.line_total)
+            # Only add to category total if line_total is not None
+            if cost.line_total is not None:
+                category_totals[cost.category_code] += float(cost.line_total)
         
         # Build cost line items with correct category totals
         for cost in project_costs:
             line_item = {
-                "category_code": cost.category_code,
-                "category_name": cost.category_name,
-                "item_description": cost.item_description,
+                "category_code": cost.category_code or "",
+                "category_name": cost.category_name or "",
+                "item_description": cost.item_description or "",
                 "supplier_brand": cost.supplier_brand or "",
                 "unit": cost.unit or "",
-                "quantity": float(cost.quantity),
-                "rate_per_unit": float(cost.rate_per_unit),
-                "line_total": float(cost.line_total),
-                "category_total": category_totals[cost.category_code]
+                "quantity": float(cost.quantity) if cost.quantity is not None else 0.0,
+                "rate_per_unit": float(cost.rate_per_unit) if cost.rate_per_unit is not None else 0.0,
+                "line_total": float(cost.line_total) if cost.line_total is not None else 0.0,
+                "category_total": category_totals[cost.category_code or ""]
             }
             cost_line_items.append(line_item)
         
@@ -124,15 +126,15 @@ def generate_costing_json_from_db(project_id=None, include_wrapper=False):
         if project_overheads.exists():
             for overhead in project_overheads:
                 overheads.append({
-                    "overhead_type": overhead.overhead_type,
+                    "overhead_type": overhead.overhead_type or "",
                     "description": overhead.description or "Provided in your BOQ",
                     "basis": overhead.basis or "On total cost",
-                    "percentage": float(overhead.percentage),
-                    "amount": float(overhead.amount)
+                    "percentage": float(overhead.percentage) if overhead.percentage is not None else 0.0,
+                    "amount": float(overhead.amount) if overhead.amount is not None else 0.0
                 })
         else:
             # Add default overheads if none exist
-            subtotal = sum(float(cost.line_total) for cost in project_costs)
+            subtotal = sum(float(cost.line_total) for cost in project_costs if cost.line_total is not None)
             overheads = [
                 {
                     "overhead_type": "Contingency",
@@ -162,7 +164,7 @@ def generate_costing_json_from_db(project_id=None, include_wrapper=False):
         # Build the costing data
         costing_data = {
             "project": {
-                "name": project.name,
+                "name": project.name or "",
                 "location": project.location or "",
                 "total_cost": int(total_cost),
                 "start_date": project.start_date.isoformat() if project.start_date else None,
@@ -237,16 +239,16 @@ def get_accepted_decisions_news():
         
         for alert in accepted_alerts:
             decision_data = {
-                "decision": alert.decision,
-                "reason": alert.reason,
-                "suggestion": alert.suggestion,
-                "category_name": alert.category_name,
-                "item": alert.item,
-                "old_supplier_brand": str(alert.old_supplier_brand) if alert.old_supplier_brand else "",
-                "old_rate_per_unit": float(alert.old_rate_per_unit) if alert.old_rate_per_unit else 0,
-                "new_supplier_brand": str(alert.new_supplier_brand) if alert.new_supplier_brand else "",
-                "new_rate_per_unit": float(alert.new_rate_per_unit) if alert.new_rate_per_unit else 0,
-                "cost_impact": float(alert.cost_impact) if alert.cost_impact else 0,
+                "decision": alert.decision or "",
+                "reason": alert.reason or "",
+                "suggestion": alert.suggestion or "",
+                "category_name": alert.category_name or "",
+                "item": alert.item or "",
+                "old_supplier_brand": str(alert.old_supplier_brand) if alert.old_supplier_brand is not None else "",
+                "old_rate_per_unit": float(alert.old_rate_per_unit) if alert.old_rate_per_unit is not None else 0.0,
+                "new_supplier_brand": str(alert.new_supplier_brand) if alert.new_supplier_brand is not None else "",
+                "new_rate_per_unit": float(alert.new_rate_per_unit) if alert.new_rate_per_unit is not None else 0.0,
+                "cost_impact": float(alert.cost_impact) if alert.cost_impact is not None else 0.0,
                 "accepted_at": alert.accepted_at.isoformat() if alert.accepted_at else None
             }
             previous_decisions_news[str(decision_count)] = decision_data
