@@ -115,7 +115,7 @@ def generate_costing_json_from_db(project_id=None, include_wrapper=False):
                 "quantity": float(cost.quantity) if cost.quantity is not None else 0.0,
                 "rate_per_unit": float(cost.rate_per_unit) if cost.rate_per_unit is not None else 0.0,
                 "line_total": float(cost.line_total) if cost.line_total is not None else 0.0,
-                "category_total": category_totals[cost.category_code or ""]
+                "category_total": float(cost.category_total) if cost.category_total is not None else 0.0
             }
             cost_line_items.append(line_item)
         
