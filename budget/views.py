@@ -212,15 +212,24 @@ class PDFExtractionView(APIView):
             )
 
 
-def call_chatbot_decision_accept_api(approval, costing_json):
+def call_chatbot_decision_accept_api(approval, costing_json, answer):
     """
-    Utility function to call the external chatbot-decision-accept API
+    Call the external chatbot-decision-accept API
+    
+    Args:
+        approval: 'accept' or 'reject' - user's approval decision
+        costing_json: The costing data dictionary
+        answer: The answer text extracted from message content
+    
+    Returns:
+        dict: API response containing status, answer, costing_json, and final_action
     """
     api_url = "http://0.0.0.0:8000/api/chatbot-decision-accept"
     
     payload = {
         "approval": approval,
-        "costing_json": costing_json
+        "costing_json": costing_json,
+        "answer": answer
     }
     
     headers = {
@@ -229,31 +238,38 @@ def call_chatbot_decision_accept_api(approval, costing_json):
     }
     
     try:
-        logger.info(f"Calling chatbot decision accept API with approval: {approval}")
+        logger.info(f"Calling external API with approval: {approval}")
         response = requests.post(api_url, json=payload, headers=headers, timeout=3000)
         response.raise_for_status()
         
         api_response = response.json()
-        logger.info(f"Chatbot API response received: {api_response.get('status', 'unknown')}")
+        logger.info(f"External API response: status={api_response.get('status')}, final_action={api_response.get('final_action')}")
         
         return api_response
     except requests.exceptions.RequestException as e:
-        logger.error(f"Error calling chatbot decision accept API: {str(e)}")
-        raise Exception(f"Failed to call chatbot API: {str(e)}")
+        logger.error(f"Error calling external API: {str(e)}")
+        raise Exception(f"Failed to call external API: {str(e)}")
     except json.JSONDecodeError as e:
-        logger.error(f"Error parsing chatbot API response: {str(e)}")
-        raise Exception(f"Invalid response from chatbot API: {str(e)}")
+        logger.error(f"Error parsing API response: {str(e)}")
+        raise Exception(f"Invalid JSON response from API: {str(e)}")
 
 
 class ChatAcceptView(APIView):
     """
-    API endpoint to handle chat-accept requests with message_id.
-    Retrieves costing_json from message metadata, calls external API, and updates budget.
+    API endpoint to handle chat-accept requests.
+    
+    Workflow:
+    1. Receive message_id and approval from user
+    2. Extract costing_json from message metadata
+    3. Extract answer from message content
+    4. Call external API with approval, costing_json, and answer
+    5. Use final_action from API response to determine database updates
+    6. Update message and budget based on final_action (not user approval)
     """
     permission_classes = [IsAuthenticated]
     
     def post(self, request, format=None):
-        # Validate the incoming data
+        # Validate request data
         serializer = ChatAcceptRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -262,71 +278,86 @@ class ChatAcceptView(APIView):
         approval = serializer.validated_data['approval']
         
         try:
-            # Get the message and extract costing data from metadata
+            # Step 1: Get the message
             message = Messages.objects.get(message_id=message_id)
-            chatbot_response = message.metadata.get('chatbot_response', {})
-            costing_data = chatbot_response.get('costing', {})
             
-            if not costing_data:
+            # Step 2: Extract costing_json from metadata
+            metadata = message.metadata or {}
+            chatbot_response = metadata.get('chatbot_response', {})
+            costing_json = chatbot_response.get('costing')
+            
+            # Handle nested data structure if it exists, otherwise use direct structure
+            if costing_json and isinstance(costing_json, dict) and 'data' in costing_json:
+                costing_json = costing_json['data']
+            
+            if not costing_json:
                 return Response(
                     {'error': 'No costing data found in message metadata'}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Update the original message to hide it
-            message.is_hide = True
+            # Step 3: Extract answer from message content
+            answer = message.content or ""
             
-            # If approval is 'accept', mark the message as accepted
-            if approval == 'accept':
-                message.accept_message()  # This sets is_accept=True and accepted_at=timezone.now() and saves
-            else:
-                from django.utils import timezone
-                message.accepted_at = timezone.now()
-                message.save()  # Save with accepted_at timestamp even on reject
+            # Step 4: Call external API
+            logger.info(f"Processing chat-accept for message {message_id} with approval: {approval}")
+            api_response = call_chatbot_decision_accept_api(approval, costing_json, answer)
             
-            # If approval is 'reject', just return success without calling external API
-            if approval == 'reject':
-                return Response({
-                    'status': 'success',
-                    'message': 'Message rejected and hidden successfully',
-                    'approval': approval
-                }, status=status.HTTP_200_OK)
-            
-            # Extract the actual costing_json from the nested structure for 'accept' approval
-            costing_json = costing_data.get('data', costing_data)
-            # Call the external chatbot decision accept API
-            api_response = call_chatbot_decision_accept_api(approval, costing_json)
-            
-            # Validate the API response
+            # Step 5: Validate API response
             response_serializer = ChatAcceptResponseSerializer(data=api_response)
             if not response_serializer.is_valid():
                 logger.error(f"Invalid API response: {response_serializer.errors}")
                 return Response(
-                    {'error': 'Invalid response from chatbot API', 'details': response_serializer.errors}, 
+                    {'error': 'Invalid response from external API', 'details': response_serializer.errors}, 
                     status=status.HTTP_502_BAD_GATEWAY
                 )
             
-            # Save the chatbot answer as a new message
-            answer = api_response.get('answer', '')
-            if answer:
+            # Step 6: Get final_action from API response
+            final_action = api_response.get('final_action')
+            api_answer = api_response.get('answer', '')
+            updated_costing_json = api_response.get('costing_json', {})
+            
+            # Step 7: Update message based on final_action
+            message.is_hide = True
+            if final_action == 'accept':
+                message.is_accept = True
+                from django.utils import timezone
+                message.accepted_at = timezone.now()
+            else:
+                message.is_accept = False
+            message.save()
+            
+            # Step 8: Save API answer as new assistant message
+            if api_answer:
                 Messages.objects.create(
                     conversation=message.conversation,
                     session=message.session,
                     message_type='assistant',
-                    content=answer,
-                    metadata={'source': 'chat_accept_api', 'original_message_id': message_id}
+                    content=api_answer,
+                    metadata={
+                        'source': 'chat_accept_api',
+                        'original_message_id': message_id,
+                        'final_action': final_action
+                    }
                 )
             
-            # Update the budget with version control for 'accept' approval
-            updated_costing_json = api_response.get('costing_json', {})
-            if updated_costing_json:
-                self._update_budget_with_version_control(updated_costing_json, request.user)
+            # Step 9: Update budget ONLY if final_action is 'accept'
+            budget_updated = False
+            if final_action == 'accept' and updated_costing_json:
+                logger.info("Final action is 'accept', updating budget")
+                self._update_budget(updated_costing_json, request.user)
+                budget_updated = True
+            else:
+                logger.info(f"Final action is '{final_action}', skipping budget update")
             
+            # Step 10: Return response
             return Response({
                 'status': 'success',
-                'message': f'Chat accept processed successfully with approval: {approval}',
-                'answer': answer,
-                'costing_json': api_response.get('costing_json', {})
+                'message': f'Chat processed successfully',
+                'final_action': final_action,
+                'answer': api_answer,
+                'costing_json': updated_costing_json,
+                'budget_updated': budget_updated
             }, status=status.HTTP_200_OK)
             
         except Messages.DoesNotExist:
@@ -335,15 +366,15 @@ class ChatAcceptView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
-            logger.error(f"Error processing chat accept: {str(e)}", exc_info=True)
+            logger.error(f"Error processing chat-accept: {str(e)}", exc_info=True)
             return Response(
-                {'error': f'Failed to process chat accept: {str(e)}'}, 
+                {'error': f'Failed to process chat-accept: {str(e)}'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    def _update_budget_with_version_control(self, costing_json, user):
+    def _update_budget(self, costing_json, user):
         """
-        Update budget data with automatic version control based on costing_json
+        Update budget data with automatic version control
         """
         try:
             with transaction.atomic():
@@ -362,193 +393,95 @@ class ChatAcceptView(APIView):
                         'location': project_data.get('location'),
                         'start_date': project_data.get('start_date'),
                         'end_date': project_data.get('end_date'),
-                        'total_cost': project_data.get('total_cost')
+                        'total_cost': Decimal(str(project_data.get('total_cost', 0))) if project_data.get('total_cost') else None
                     }
                 )
                 
-                # If project exists, update it with version control
                 if not created:
-                    update_fields = {}
-                    tracked_fields = ['location', 'start_date', 'end_date', 'total_cost']
+                    # Update existing project
+                    project._changed_by = f'chat_accept_{user.username}'
+                    project._change_reason = 'Updated from chat accept API'
                     
-                    # Convert total_cost to proper type for comparison
-                    project_total_cost = project_data.get('total_cost')
-                    if project_total_cost is not None:
-                        project_total_cost = Decimal(str(project_total_cost))
+                    if project_data.get('location'):
+                        project.location = project_data['location']
+                    if project_data.get('start_date'):
+                        project.start_date = project_data['start_date']
+                    if project_data.get('end_date'):
+                        project.end_date = project_data['end_date']
+                    if project_data.get('total_cost') is not None:
+                        project.total_cost = Decimal(str(project_data['total_cost']))
                     
-                    # Check each field for changes
-                    for field in tracked_fields:
-                        if field in project_data:
-                            current_value = getattr(project, field)
-                            new_value = project_data[field]
-                            
-                            # Special handling for total_cost (Decimal field)
-                            if field == 'total_cost' and new_value is not None:
-                                new_value = Decimal(str(new_value))
-                            
-                            if current_value != new_value:
-                                update_fields[field] = new_value
-                                logger.info(f"Project field '{field}' changed from {current_value} to {new_value}")
-                    
-                    if update_fields:
-                        # Set change tracking attributes BEFORE updating fields
-                        project._changed_by = f'chat_accept_{user.username}'
-                        project._change_reason = 'Updated from chat accept API'
-                        
-                        # Update fields
-                        for field, value in update_fields.items():
-                            setattr(project, field, value)
-                        
-                        logger.info(f"Creating version record for project changes: {update_fields}")
-                        original_version = project.version_number
-                        project.save()
-                        logger.info(f"Version record created with version {original_version + 1}. Original project remains unchanged.")
-                    else:
-                        logger.info("No project fields changed, skipping version control")
-                else:
-                    logger.info(f"New project created: {project.name}")
+                    project.save()
                 
-                # Update project costs with version control
-                if cost_items:
-                    logger.info(f"Processing {len(cost_items)} cost items")
-                    for item in cost_items:
-                        # Find existing cost item
-                        existing_costs = ProjectCosts.objects.filter(
-                            project=project,
-                            category_code=item.get('category_code'),
-                            item_description=item.get('item_description')
-                        )
+                # Update or create cost items
+                for item in cost_items:
+                    # Match by category_name and item_description
+                    cost, created = ProjectCosts.objects.get_or_create(
+                        project=project,
+                        category_name=item.get('category_name'),
+                        item_description=item.get('item_description'),
+                        defaults={
+                            'category_code': item.get('category_code'),
+                            'supplier_brand': item.get('supplier_brand'),
+                            'unit': item.get('unit'),
+                            'quantity': Decimal(str(item.get('quantity', 0))) if item.get('quantity') else None,
+                            'rate_per_unit': Decimal(str(item.get('rate_per_unit', 0))) if item.get('rate_per_unit') else None,
+                            'line_total': Decimal(str(item.get('line_total', 0))) if item.get('line_total') else None,
+                            'category_total': Decimal(str(item.get('category_total', 0))) if item.get('category_total') else None
+                        }
+                    )
+                    
+                    if not created:
+                        # Update existing cost
+                        cost._changed_by = f'chat_accept_{user.username}'
+                        cost._change_reason = 'Updated from chat accept API'
                         
-                        if existing_costs.exists():
-                            # Update existing cost item with version control
-                            existing_cost = existing_costs.first()
-                            
-                            # Check if any tracked fields have changed
-                            changes_detected = False
-                            tracked_fields = ['quantity', 'rate_per_unit', 'supplier_brand', 'category_total']
-                            
-                            for field in tracked_fields:
-                                if field in item:
-                                    current_value = getattr(existing_cost, field)
-                                    new_value = item[field]
-                                    
-                                    # Convert to Decimal for numeric fields
-                                    if field in ['quantity', 'rate_per_unit', 'category_total'] and new_value is not None:
-                                        new_value = Decimal(str(new_value))
-                                    
-                                    if current_value != new_value:
-                                        changes_detected = True
-                                        logger.info(f"Cost item '{field}' changed from {current_value} to {new_value}")
-                                        break
-                            
-                            if changes_detected:
-                                # Set change tracking attributes BEFORE updating
-                                existing_cost._changed_by = f'chat_accept_{user.username}'
-                                existing_cost._change_reason = 'Updated from chat accept API'
-                                
-                                # Update fields
-                                existing_cost.quantity = Decimal(str(item.get('quantity', existing_cost.quantity)))
-                                existing_cost.rate_per_unit = Decimal(str(item.get('rate_per_unit', existing_cost.rate_per_unit)))
-                                existing_cost.supplier_brand = item.get('supplier_brand', existing_cost.supplier_brand)
-                                if item.get('category_total') is not None:
-                                    existing_cost.category_total = Decimal(str(item.get('category_total')))
-                                existing_cost.unit = item.get('unit', existing_cost.unit)
-                                existing_cost.category_name = item.get('category_name', existing_cost.category_name)
-                                
-                                logger.info(f"Creating version record for cost item: {existing_cost.item_description}")
-                                original_version = existing_cost.version_number
-                                existing_cost.save()
-                                logger.info(f"Version record created with version {original_version + 1}. Original cost item remains unchanged.")
-                            else:
-                                logger.info(f"No changes detected for cost item: {existing_cost.item_description}")
-                        else:
-                            # Create new cost item
-                            logger.info(f"Creating new cost item: {item.get('item_description')}")
-                            new_cost = ProjectCosts.objects.create(
-                                project=project,
-                                category_code=item.get('category_code'),
-                                category_name=item.get('category_name'),
-                                item_description=item.get('item_description'),
-                                supplier_brand=item.get('supplier_brand'),
-                                unit=item.get('unit'),
-                                quantity=Decimal(str(item.get('quantity', 0))),
-                                rate_per_unit=Decimal(str(item.get('rate_per_unit', 0))),
-                                line_total=Decimal(str(item.get('line_total', 0))),
-                                category_total=Decimal(str(item.get('category_total', 0))) if item.get('category_total') is not None else None
-                            )
-                            # Set change tracking for new items (though not used in version control for new items)
-                            new_cost._changed_by = f'chat_accept_{user.username}'
-                            new_cost._change_reason = 'Created from chat accept API'
+                        if item.get('supplier_brand'):
+                            cost.supplier_brand = item['supplier_brand']
+                        if item.get('unit'):
+                            cost.unit = item['unit']
+                        if item.get('quantity') is not None:
+                            cost.quantity = Decimal(str(item['quantity']))
+                        if item.get('rate_per_unit') is not None:
+                            cost.rate_per_unit = Decimal(str(item['rate_per_unit']))
+                        if item.get('category_total') is not None:
+                            cost.category_total = Decimal(str(item['category_total']))
+                        
+                        cost.save()
                 
-                # Update project overheads with version control
-                if overhead_items:
-                    logger.info(f"Processing {len(overhead_items)} overhead items")
-                    for item in overhead_items:
-                        existing_overheads = ProjectOverheads.objects.filter(
-                            project=project,
-                            overhead_type=item.get('overhead_type')
-                        )
+                # Update or create overheads
+                for item in overhead_items:
+                    overhead, created = ProjectOverheads.objects.get_or_create(
+                        project=project,
+                        overhead_type=item.get('overhead_type'),
+                        defaults={
+                            'description': item.get('description'),
+                            'basis': item.get('basis'),
+                            'percentage': Decimal(str(item.get('percentage', 0))) if item.get('percentage') else None,
+                            'amount': Decimal(str(item.get('amount', 0))) if item.get('amount') else None
+                        }
+                    )
+                    
+                    if not created:
+                        # Update existing overhead
+                        overhead._changed_by = f'chat_accept_{user.username}'
+                        overhead._change_reason = 'Updated from chat accept API'
                         
-                        if existing_overheads.exists():
-                            # Update existing overhead with version control
-                            existing_overhead = existing_overheads.first()
-                            
-                            # Check if any tracked fields have changed
-                            changes_detected = False
-                            tracked_fields = ['percentage', 'amount', 'overhead_type', 'description']
-                            
-                            for field in tracked_fields:
-                                if field in item:
-                                    current_value = getattr(existing_overhead, field)
-                                    new_value = item[field]
-                                    
-                                    # Convert to Decimal for numeric fields
-                                    if field in ['percentage', 'amount'] and new_value is not None:
-                                        new_value = Decimal(str(new_value))
-                                    
-                                    if current_value != new_value:
-                                        changes_detected = True
-                                        logger.info(f"Overhead '{field}' changed from {current_value} to {new_value}")
-                                        break
-                            
-                            if changes_detected:
-                                # Set change tracking attributes BEFORE updating
-                                existing_overhead._changed_by = f'chat_accept_{user.username}'
-                                existing_overhead._change_reason = 'Updated from chat accept API'
-                                
-                                # Update fields
-                                existing_overhead.description = item.get('description', existing_overhead.description)
-                                existing_overhead.basis = item.get('basis', existing_overhead.basis)
-                                if item.get('percentage') is not None:
-                                    existing_overhead.percentage = Decimal(str(item.get('percentage')))
-                                if item.get('amount') is not None:
-                                    existing_overhead.amount = Decimal(str(item.get('amount')))
-                                
-                                logger.info(f"Creating version record for overhead: {existing_overhead.overhead_type}")
-                                original_version = existing_overhead.version_number
-                                existing_overhead.save()
-                                logger.info(f"Version record created with version {original_version + 1}. Original overhead remains unchanged.")
-                            else:
-                                logger.info(f"No changes detected for overhead: {existing_overhead.overhead_type}")
-                        else:
-                            # Create new overhead
-                            logger.info(f"Creating new overhead: {item.get('overhead_type')}")
-                            new_overhead = ProjectOverheads.objects.create(
-                                project=project,
-                                overhead_type=item.get('overhead_type'),
-                                description=item.get('description'),
-                                basis=item.get('basis'),
-                                percentage=Decimal(str(item.get('percentage', 0))),
-                                amount=Decimal(str(item.get('amount', 0)))
-                            )
-                            # Set change tracking for new items (though not used in version control for new items)
-                            new_overhead._changed_by = f'chat_accept_{user.username}'
-                            new_overhead._change_reason = 'Created from chat accept API'
+                        if item.get('description'):
+                            overhead.description = item['description']
+                        if item.get('basis'):
+                            overhead.basis = item['basis']
+                        if item.get('percentage') is not None:
+                            overhead.percentage = Decimal(str(item['percentage']))
+                        if item.get('amount') is not None:
+                            overhead.amount = Decimal(str(item['amount']))
+                        
+                        overhead.save()
                 
                 logger.info(f"Budget updated successfully for project: {project.name}")
                 
         except Exception as e:
-            logger.error(f"Error updating budget with version control: {str(e)}")
+            logger.error(f"Error updating budget: {str(e)}", exc_info=True)
             raise
 
 

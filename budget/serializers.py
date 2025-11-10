@@ -60,6 +60,7 @@ class ChatAcceptResponseSerializer(serializers.Serializer):
     status = serializers.CharField()
     answer = serializers.CharField()
     costing_json = serializers.DictField()
+    final_action = serializers.ChoiceField(choices=['accept', 'reject'])
     
     def validate_status(self, value):
         if value != 'success':
