@@ -10,7 +10,7 @@ class SessionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Session
-        fields = ['session_id', 'project_id', 'user_id', 'project_name', 'user_email', 'is_active', 'created_at', 'updated_at']
+        fields = ['session_id', 'project_id', 'user_id', 'project_name', 'user_email', 'is_active', 'is_delete', 'created_at', 'updated_at']
         read_only_fields = ['session_id', 'created_at', 'updated_at']
 
 
@@ -22,8 +22,8 @@ class ConversationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Conversation
-        fields = ['conversation_id', 'session_id', 'project_id', 'project_name', 'user_email', 'message_count']
-        read_only_fields = ['conversation_id']
+        fields = ['conversation_id', 'session_id', 'project_id', 'project_name', 'user_email', 'message_count', 'is_delete', 'created_at', 'updated_at']
+        read_only_fields = ['conversation_id', 'created_at', 'updated_at']
     
     def get_message_count(self, obj):
         return obj.messages.count()
@@ -63,7 +63,7 @@ class MessageSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Messages
-        fields = ['message_id', 'conversation', 'sender', 'sender_email', 'message_type', 'content', 'metadata', 'is_hide', 'is_accept', 'accepted_at', 'created_at', 'updated_at']
+        fields = ['message_id', 'conversation', 'sender', 'sender_email', 'message_type', 'content', 'metadata', 'is_hide', 'is_accept', 'accepted_at', 'is_delete', 'created_at', 'updated_at']
         read_only_fields = ['message_id', 'created_at', 'updated_at']
 
 
@@ -100,7 +100,7 @@ class UpdatedCostSerializer(serializers.ModelSerializer):
         fields = [
             'updated_cost_id', 'conversation_id', 'message_id', 'project_name', 
             'project_location', 'total_cost', 'start_date', 'end_date',
-            'cost_line_items', 'overheads', 'is_accept', 'accepted_at',
+            'cost_line_items', 'overheads', 'is_accept', 'accepted_at', 'is_delete',
             'raw_costing_response', 'created_at', 'updated_at'
         ]
         read_only_fields = ['updated_cost_id', 'created_at', 'updated_at']

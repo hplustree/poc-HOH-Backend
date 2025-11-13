@@ -677,85 +677,101 @@ def create_sessions_for_all_users_on_project_creation(project):
         }
 
 
-def clear_all_project_data():
+
+def soft_delete_all_project_data():
     """
-    Clear all existing project-related data from the database.
+    Soft delete all existing project-related data from the database.
     This includes projects, costs, overheads, sessions, conversations, and messages.
+    Sets is_delete=True instead of physically deleting records.
     
     Returns:
-        Dictionary with clearing operation results
+        Dictionary with soft delete operation results
     """
     try:
         from django.db import transaction
         import logging
         
         logger = logging.getLogger(__name__)
-        logger.info("Starting to clear all existing project data from database")
+        logger.info("Starting to soft delete all existing project data from database")
         
         with transaction.atomic():
-            # Count existing records before deletion
-            projects_count = Projects.objects.count()
-            costs_count = ProjectCosts.objects.count()
-            overheads_count = ProjectOverheads.objects.count()
-            sessions_count = Session.objects.count()
-            conversations_count = Conversation.objects.count()
-            messages_count = Messages.objects.count()
+            # Count existing active records before soft deletion
+            projects_count = Projects.objects.filter(is_delete=False).count()
+            costs_count = ProjectCosts.objects.filter(is_delete=False).count()
+            overheads_count = ProjectOverheads.objects.filter(is_delete=False).count()
+            sessions_count = Session.objects.filter(is_delete=False).count()
+            conversations_count = Conversation.objects.filter(is_delete=False).count()
+            messages_count = Messages.objects.filter(is_delete=False).count()
             
-            logger.info(f"Found existing data - Projects: {projects_count}, Costs: {costs_count}, "
+            logger.info(f"Found existing active data - Projects: {projects_count}, Costs: {costs_count}, "
                        f"Overheads: {overheads_count}, Sessions: {sessions_count}, "
                        f"Conversations: {conversations_count}, Messages: {messages_count}")
             
-            # Clear all data in proper order (respecting foreign key constraints)
-            # 1. Clear messages first (depends on conversations and sessions)
-            Messages.objects.all().delete()
-            logger.info("Cleared all messages")
+            # Soft delete all data (order doesn't matter for soft delete)
+            # 1. Soft delete messages
+            messages_updated = Messages.objects.filter(is_delete=False).update(is_delete=True)
+            logger.info(f"Soft deleted {messages_updated} messages")
             
-            # 2. Clear conversations (depends on sessions and projects)
-            Conversation.objects.all().delete()
-            logger.info("Cleared all conversations")
+            # 2. Soft delete conversations
+            conversations_updated = Conversation.objects.filter(is_delete=False).update(is_delete=True)
+            logger.info(f"Soft deleted {conversations_updated} conversations")
             
-            # 3. Clear sessions (depends on projects and users)
-            Session.objects.all().delete()
-            logger.info("Cleared all sessions")
+            # 3. Soft delete sessions
+            sessions_updated = Session.objects.filter(is_delete=False).update(is_delete=True)
+            logger.info(f"Soft deleted {sessions_updated} sessions")
             
-            # 4. Clear project costs and overheads (depends on projects)
-            ProjectCosts.objects.all().delete()
-            logger.info("Cleared all project costs")
+            # 4. Soft delete project costs and overheads
+            costs_updated = ProjectCosts.objects.filter(is_delete=False).update(is_delete=True)
+            logger.info(f"Soft deleted {costs_updated} project costs")
             
-            ProjectOverheads.objects.all().delete()
-            logger.info("Cleared all project overheads")
+            overheads_updated = ProjectOverheads.objects.filter(is_delete=False).update(is_delete=True)
+            logger.info(f"Soft deleted {overheads_updated} project overheads")
             
-            # 5. Clear version tables
+            # 5. Soft delete version tables
             from budget.models import ProjectVersion, ProjectCostVersion, ProjectOverheadVersion
-            ProjectCostVersion.objects.all().delete()
-            ProjectOverheadVersion.objects.all().delete()
-            ProjectVersion.objects.all().delete()
-            logger.info("Cleared all version history tables")
+            cost_versions_updated = ProjectCostVersion.objects.filter(is_delete=False).update(is_delete=True)
+            overhead_versions_updated = ProjectOverheadVersion.objects.filter(is_delete=False).update(is_delete=True)
+            project_versions_updated = ProjectVersion.objects.filter(is_delete=False).update(is_delete=True)
+            logger.info(f"Soft deleted version history - Cost versions: {cost_versions_updated}, "
+                       f"Overhead versions: {overhead_versions_updated}, Project versions: {project_versions_updated}")
             
-            # 6. Finally clear projects
-            Projects.objects.all().delete()
-            logger.info("Cleared all projects")
+            # 6. Finally soft delete projects
+            projects_updated = Projects.objects.filter(is_delete=False).update(is_delete=True)
+            logger.info(f"Soft deleted {projects_updated} projects")
             
-            logger.info("Successfully cleared all project-related data from database")
+            # 7. Soft delete UpdatedCost records
+            try:
+                from chatapp.models import UpdatedCost
+                updated_costs_count = UpdatedCost.objects.filter(is_delete=False).update(is_delete=True)
+                logger.info(f"Soft deleted {updated_costs_count} updated cost records")
+            except Exception as e:
+                logger.warning(f"Could not soft delete UpdatedCost records: {str(e)}")
+                updated_costs_count = 0
+            
+            logger.info("Successfully soft deleted all project-related data from database")
             
             return {
                 "success": True,
-                "message": "All project data cleared successfully",
-                "cleared_counts": {
-                    "projects": projects_count,
-                    "costs": costs_count,
-                    "overheads": overheads_count,
-                    "sessions": sessions_count,
-                    "conversations": conversations_count,
-                    "messages": messages_count
+                "message": "All project data soft deleted successfully",
+                "soft_deleted_counts": {
+                    "projects": projects_updated,
+                    "costs": costs_updated,
+                    "overheads": overheads_updated,
+                    "sessions": sessions_updated,
+                    "conversations": conversations_updated,
+                    "messages": messages_updated,
+                    "cost_versions": cost_versions_updated,
+                    "overhead_versions": overhead_versions_updated,
+                    "project_versions": project_versions_updated,
+                    "updated_costs": updated_costs_count
                 }
             }
             
     except Exception as e:
-        logger.error(f"Error clearing project data: {str(e)}")
+        logger.error(f"Error soft deleting project data: {str(e)}")
         return {
             "success": False,
-            "error": f"Failed to clear project data: {str(e)}"
+            "error": f"Failed to soft delete project data: {str(e)}"
         }
 
 

@@ -21,6 +21,7 @@ class Projects(models.Model):
     end_date = models.DateField(blank=True, null=True)
     total_cost = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     version_number = models.IntegerField(default=1)
+    is_delete = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -35,6 +36,16 @@ class Projects(models.Model):
 
     def __str__(self):
         return f"{self.name} (v{self.version_number})"
+    
+    def soft_delete(self):
+        """Mark the project as deleted"""
+        self.is_delete = True
+        self.save()
+    
+    def restore(self):
+        """Restore the deleted project"""
+        self.is_delete = False
+        self.save()
 
     def save(self, *args, **kwargs):
         """Override save to implement automatic versioning"""
@@ -84,6 +95,7 @@ class ProjectVersion(VersionNumber):
     total_cost = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     version_number = models.IntegerField()
     change_reason = models.CharField(max_length=255, blank=True, null=True)
+    is_delete = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'project_versions'
@@ -91,6 +103,16 @@ class ProjectVersion(VersionNumber):
 
     def __str__(self):
         return f"{self.project.name} v{self.version_number}"
+    
+    def soft_delete(self):
+        """Mark the project version as deleted"""
+        self.is_delete = True
+        self.save()
+    
+    def restore(self):
+        """Restore the deleted project version"""
+        self.is_delete = False
+        self.save()
 
 
 class ProjectCosts(models.Model):
@@ -106,6 +128,7 @@ class ProjectCosts(models.Model):
     line_total = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     category_total = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     version_number = models.IntegerField(default=1, blank=True, null=True)
+    is_delete = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
     
@@ -120,6 +143,16 @@ class ProjectCosts(models.Model):
 
     def __str__(self):
         return f"{self.item_description} - {self.project.name} (v{self.version_number})"
+    
+    def soft_delete(self):
+        """Mark the project cost as deleted"""
+        self.is_delete = True
+        self.save()
+    
+    def restore(self):
+        """Restore the deleted project cost"""
+        self.is_delete = False
+        self.save()
 
     def save(self, *args, **kwargs):
         """Override save to implement automatic versioning"""
@@ -199,6 +232,7 @@ class ProjectCostVersion(VersionNumber):
     category_total = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     version_number = models.IntegerField(blank=True, null=True)
     change_reason = models.CharField(max_length=255, blank=True, null=True)
+    is_delete = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'project_cost_versions'
@@ -206,6 +240,16 @@ class ProjectCostVersion(VersionNumber):
 
     def __str__(self):
         return f"{self.item_description} v{self.version_number}"
+    
+    def soft_delete(self):
+        """Mark the project cost version as deleted"""
+        self.is_delete = True
+        self.save()
+    
+    def restore(self):
+        """Restore the deleted project cost version"""
+        self.is_delete = False
+        self.save()
 
 
 class ProjectOverheads(models.Model):
@@ -217,6 +261,7 @@ class ProjectOverheads(models.Model):
     percentage = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     version_number = models.IntegerField(default=1, blank=True, null=True)
+    is_delete = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
     
@@ -231,6 +276,16 @@ class ProjectOverheads(models.Model):
 
     def __str__(self):
         return f"{self.overhead_type} - {self.project.name} (v{self.version_number})"
+    
+    def soft_delete(self):
+        """Mark the project overhead as deleted"""
+        self.is_delete = True
+        self.save()
+    
+    def restore(self):
+        """Restore the deleted project overhead"""
+        self.is_delete = False
+        self.save()
 
     def save(self, *args, **kwargs):
         """Override save to implement automatic versioning"""
@@ -282,6 +337,7 @@ class ProjectOverheadVersion(VersionNumber):
     amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     version_number = models.IntegerField(blank=True, null=True)
     change_reason = models.CharField(max_length=255, blank=True, null=True)
+    is_delete = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'project_overhead_versions'
@@ -289,3 +345,13 @@ class ProjectOverheadVersion(VersionNumber):
 
     def __str__(self):
         return f"{self.overhead_type} v{self.version_number}"
+    
+    def soft_delete(self):
+        """Mark the project overhead version as deleted"""
+        self.is_delete = True
+        self.save()
+    
+    def restore(self):
+        """Restore the deleted project overhead version"""
+        self.is_delete = False
+        self.save()

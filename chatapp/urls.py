@@ -6,7 +6,7 @@ urlpatterns = [
     path('sessions/', views.SessionListCreateView.as_view(), name='session-list-create'),
     
     # Conversation management
-    path('conversations/', views.get_all_conversations, name='get_all_conversations'),
+    path('conversations/fetch/', views.fetch_conversations_by_project_user, name='fetch_conversations_by_project_user'),
     path('conversations/create/', views.create_conversation, name='create_conversation'),
     path('conversations/<int:conversation_id>/delete/', views.delete_conversation, name='delete_conversation'),
     
@@ -19,4 +19,8 @@ urlpatterns = [
     path('updated-costs/', views.get_updated_costs, name='get_updated_costs'),
     path('updated-costs/<int:updated_cost_id>/', views.get_updated_cost_detail, name='get_updated_cost_detail'),
     path('updated-costs/<int:updated_cost_id>/status/', views.update_cost_status, name='update_cost_status'),
+    
+    # Additional endpoints for restore functionality (only where needed)
+    path('conversations/<int:conversation_id>/restore/', views.restore_conversation, name='restore_conversation'),
+    path('deleted-records/', views.get_deleted_records, name='get_deleted_records'),
 ]

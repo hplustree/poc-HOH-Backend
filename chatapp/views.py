@@ -100,14 +100,14 @@ def send_message(request):
             # Get or create conversation
             if conversation_id:
                 try:
-                    conversation = Conversation.objects.get(conversation_id=conversation_id)
+                    conversation = Conversation.objects.get(conversation_id=conversation_id, is_delete=False)
                 except Conversation.DoesNotExist:
                     return Response({
                         'error': 'Conversation not found'
                     }, status=status.HTTP_404_NOT_FOUND)
             else:
                 # Create new conversation
-                session = Session.objects.get(session_id=session_id)
+                session = Session.objects.get(session_id=session_id, is_delete=False)
                 conversation = Conversation.objects.create(
                     session=session,
                     project_id=session.project_id  # Use project_id from session
@@ -221,8 +221,8 @@ def get_conversation_history(request, conversation_id):
     Get all messages in a conversation
     """
     try:
-        conversation = Conversation.objects.get(conversation_id=conversation_id)
-        messages = Messages.objects.filter(conversation=conversation).order_by('created_at')
+        conversation = Conversation.objects.get(conversation_id=conversation_id, is_delete=False)
+        messages = Messages.objects.filter(conversation=conversation, is_delete=False).order_by('created_at')
         
         serializer = MessageSerializer(messages, many=True)
         
@@ -264,7 +264,7 @@ def get_user_sessions(request):
                 'error': 'User not found'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        sessions = Session.objects.filter(user_id=user_detail).order_by('-updated_at')
+        sessions = Session.objects.filter(user_id=user_detail, is_delete=False).order_by('-updated_at')
         serializer = SessionSerializer(sessions, many=True)
         
         return Response({
@@ -291,8 +291,8 @@ def get_updated_costs(request):
         is_accept = request.GET.get('is_accept')
         limit = int(request.GET.get('limit', 20))
         
-        # Build query
-        queryset = UpdatedCost.objects.all()
+        # Build query - exclude deleted records
+        queryset = UpdatedCost.objects.filter(is_delete=False)
         
         if conversation_id:
             queryset = queryset.filter(conversation__conversation_id=conversation_id)
@@ -330,7 +330,7 @@ def get_updated_cost_detail(request, updated_cost_id):
     Get detailed information about a specific updated cost
     """
     try:
-        updated_cost = UpdatedCost.objects.get(updated_cost_id=updated_cost_id)
+        updated_cost = UpdatedCost.objects.get(updated_cost_id=updated_cost_id, is_delete=False)
         serializer = UpdatedCostSerializer(updated_cost)
         
         return Response({
@@ -353,17 +353,28 @@ def get_updated_cost_detail(request, updated_cost_id):
 @permission_classes([IsAuthenticated])
 def update_cost_status(request, updated_cost_id):
     """
-    Update the is_accept status of a specific updated cost
+    Update the is_accept status or soft delete an updated cost
     
     Expected payload:
     {
-        "is_accept": true/false/null
+        "is_accept": true/false/null,
+        "action": "delete"  // optional - for soft delete
     }
     """
     try:
-        updated_cost = UpdatedCost.objects.get(updated_cost_id=updated_cost_id)
+        updated_cost = UpdatedCost.objects.get(updated_cost_id=updated_cost_id, is_delete=False)
         
-        # Validate the request data
+        # Check if this is a soft delete action
+        action = request.data.get('action')
+        if action == 'delete':
+            updated_cost.soft_delete()
+            return Response({
+                'success': True,
+                'message': f'Updated cost {updated_cost_id} marked as deleted',
+                'updated_cost_id': updated_cost_id
+            }, status=status.HTTP_200_OK)
+        
+        # Regular status update
         serializer = UpdatedCostStatusSerializer(updated_cost, data=request.data, partial=True)
         
         if serializer.is_valid():
@@ -400,16 +411,18 @@ def update_cost_status(request, updated_cost_id):
 class SessionListCreateView(generics.ListCreateAPIView):
     """
     View for listing and creating chat sessions
+    Also handles soft delete via PATCH method
     """
     serializer_class = SessionSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Return only active sessions for the authenticated user
+        # Return only active and non-deleted sessions for the authenticated user
         user_email = self.request.user.email
         return Session.objects.filter(
             user_id__email=user_email,
-            is_active=True
+            is_active=True,
+            is_delete=False
         ).select_related('project_id', 'user_id').order_by('-created_at')
 
     def perform_create(self, serializer):
@@ -422,21 +435,113 @@ class SessionListCreateView(generics.ListCreateAPIView):
             user_id=user_detail,
             is_active=True
         )
+    
+    def patch(self, request, *args, **kwargs):
+        """
+        Handle soft delete and restore operations for sessions
+        Expected payload: {"action": "delete"} or {"action": "restore"}
+        """
+        try:
+            session_id = request.data.get('session_id')
+            action = request.data.get('action')
+            user_email = request.user.email
+            
+            if not session_id:
+                return Response({
+                    'error': 'session_id is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if action == 'delete':
+                session = Session.objects.get(
+                    session_id=session_id,
+                    user_id__email=user_email,
+                    is_delete=False
+                )
+                session.soft_delete()
+                return Response({
+                    'success': True,
+                    'message': f'Session {session_id} marked as deleted'
+                }, status=status.HTTP_200_OK)
+                
+            elif action == 'restore':
+                session = Session.objects.get(
+                    session_id=session_id,
+                    user_id__email=user_email,
+                    is_delete=True
+                )
+                session.restore()
+                return Response({
+                    'success': True,
+                    'message': f'Session {session_id} restored successfully'
+                }, status=status.HTTP_200_OK)
+            
+            else:
+                return Response({
+                    'error': 'Invalid action. Use "delete" or "restore"'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Session.DoesNotExist:
+            return Response({
+                'error': 'Session not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'error': 'Failed to process session action',
+                'details': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def get_all_conversations(request):
+def fetch_conversations_by_project_user(request):
     """
-    Get all conversations for the authenticated user
+    POST: Fetch conversations based on project_id and user_id
+    
+    Request body:
+    {
+        "project_id": 1,
+        "user_id": 2
+    }
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        project_id = request.data.get('project_id')
+        user_id = request.data.get('user_id')
         user_email = request.user.email
         
-        # Get all conversations for the user's sessions
+        # Validate required fields
+        if not project_id:
+            return Response({
+                'error': 'project_id is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not user_id:
+            return Response({
+                'error': 'user_id is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get user detail to validate user_id
+        try:
+            user_detail = UserDetail.objects.get(id=user_id)
+        except UserDetail.DoesNotExist:
+            return Response({
+                'error': 'User not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Build filter conditions
+        filter_conditions = {
+            'session__user_id': user_detail,
+            'session__is_active': True,
+            'session__is_delete': False,
+            'is_delete': False,
+            'project_id': project_id
+        }
+        
+        # Get conversations based on project_id and user_id
         conversations = Conversation.objects.filter(
-            session__user_id__email=user_email,
-            session__is_active=True
+            **filter_conditions
         ).select_related(
             'session', 
             'session__project_id', 
@@ -448,10 +553,14 @@ def get_all_conversations(request):
         return Response({
             'success': True,
             'count': len(serialized_conversations),
+            'project_id': project_id,
+            'user_id': user_id,
+            'user_email': user_detail.email,
             'conversations': serialized_conversations
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
+        logger.error(f"Error fetching conversations: {str(e)}")
         return Response({
             'error': 'Failed to retrieve conversations',
             'details': str(e)
@@ -483,7 +592,8 @@ def create_conversation(request):
             session = Session.objects.get(
                 session_id=session_id,
                 user_id__email=user_email,
-                is_active=True
+                is_active=True,
+                is_delete=False
             )
         except Session.DoesNotExist:
             return Response({
@@ -537,16 +647,17 @@ def get_all_chats(request):
             conversation = Conversation.objects.select_related(
                 'session', 
                 'session__project_id'
-            ).get(conversation_id=conversation_id)
+            ).get(conversation_id=conversation_id, is_delete=False)
         except Conversation.DoesNotExist:
             return Response({
                 'error': 'Conversation not found',
                 'message': f'No conversation found with ID {conversation_id}'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        # Fetch all messages for this conversation in chronological order
+        # Fetch all non-deleted messages for this conversation in chronological order
         messages = Messages.objects.filter(
-            conversation=conversation
+            conversation=conversation,
+            is_delete=False
         ).order_by('created_at')
         
         # Serialize messages using the existing serializer
@@ -605,7 +716,7 @@ def delete_conversation(request, conversation_id):
                 'session', 
                 'session__user_id',
                 'project_id'
-            ).get(conversation_id=conversation_id)
+            ).get(conversation_id=conversation_id, is_delete=False)
         except Conversation.DoesNotExist:
             return Response({
                 'error': 'Conversation not found',
@@ -632,9 +743,16 @@ def delete_conversation(request, conversation_id):
             'updated_cost_count': updated_cost_count
         }
         
-        # Delete conversation (CASCADE will handle related objects)
+        # Soft delete conversation and related objects
         with transaction.atomic():
-            conversation.delete()
+            # Soft delete all messages in this conversation
+            Messages.objects.filter(conversation=conversation).update(is_delete=True)
+            
+            # Soft delete all updated costs in this conversation
+            UpdatedCost.objects.filter(conversation=conversation).update(is_delete=True)
+            
+            # Soft delete the conversation itself
+            conversation.soft_delete()
         
         return Response({
             'success': True,
@@ -649,5 +767,107 @@ def delete_conversation(request, conversation_id):
     except Exception as e:
         return Response({
             'error': 'Failed to delete conversation',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def restore_conversation(request, conversation_id):
+    """
+    Restore a soft-deleted conversation and all its messages/updated costs
+    """
+    try:
+        user_email = request.user.email
+        conversation = Conversation.objects.select_related(
+            'session', 
+            'session__user_id'
+        ).get(
+            conversation_id=conversation_id,
+            session__user_id__email=user_email,
+            is_delete=True
+        )
+        
+        with transaction.atomic():
+            # Restore all messages in this conversation
+            Messages.objects.filter(conversation=conversation).update(is_delete=False)
+            
+            # Restore all updated costs in this conversation
+            UpdatedCost.objects.filter(conversation=conversation).update(is_delete=False)
+            
+            # Restore the conversation itself
+            conversation.restore()
+        
+        return Response({
+            'success': True,
+            'message': f'Conversation {conversation_id} and related data restored successfully',
+            'conversation_id': conversation_id
+        }, status=status.HTTP_200_OK)
+        
+    except Conversation.DoesNotExist:
+        return Response({
+            'error': 'Deleted conversation not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'error': 'Failed to restore conversation',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_deleted_records(request):
+    """
+    Get all soft-deleted records for the authenticated user
+    """
+    try:
+        user_email = request.user.email
+        
+        # Get deleted sessions
+        deleted_sessions = Session.objects.filter(
+            user_id__email=user_email,
+            is_delete=True
+        ).select_related('project_id', 'user_id')
+        
+        # Get deleted conversations
+        deleted_conversations = Conversation.objects.filter(
+            session__user_id__email=user_email,
+            is_delete=True
+        ).select_related('session', 'project_id')
+        
+        # Get deleted messages
+        deleted_messages = Messages.objects.filter(
+            conversation__session__user_id__email=user_email,
+            is_delete=True
+        ).select_related('conversation', 'sender')
+        
+        # Get deleted updated costs
+        deleted_updated_costs = UpdatedCost.objects.filter(
+            conversation__session__user_id__email=user_email,
+            is_delete=True
+        ).select_related('conversation')
+        
+        return Response({
+            'success': True,
+            'deleted_records': {
+                'sessions': SessionSerializer(deleted_sessions, many=True).data,
+                'conversations': ConversationSerializer(deleted_conversations, many=True).data,
+                'messages': MessageSerializer(deleted_messages, many=True).data,
+                'updated_costs': UpdatedCostSerializer(deleted_updated_costs, many=True).data
+            },
+            'counts': {
+                'sessions': deleted_sessions.count(),
+                'conversations': deleted_conversations.count(),
+                'messages': deleted_messages.count(),
+                'updated_costs': deleted_updated_costs.count()
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'error': 'Failed to retrieve deleted records',
             'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

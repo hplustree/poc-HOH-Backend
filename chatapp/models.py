@@ -10,6 +10,7 @@ class Session(models.Model):
     project_id = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name='chat_sessions')
     user_id = models.ForeignKey(UserDetail, on_delete=models.CASCADE, related_name='chat_sessions')
     is_active = models.BooleanField(default=True)
+    is_delete = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -21,6 +22,16 @@ class Session(models.Model):
     
     def __str__(self):
         return f"Session {self.session_id} - {self.project_id.name} ({self.user_id.email})"
+    
+    def soft_delete(self):
+        """Mark session as deleted"""
+        self.is_delete = True
+        self.save()
+    
+    def restore(self):
+        """Restore deleted session"""
+        self.is_delete = False
+        self.save()
 
 
 class Conversation(models.Model):
@@ -28,6 +39,9 @@ class Conversation(models.Model):
     conversation_id = models.AutoField(primary_key=True)
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='conversations')
     project_id = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name='conversations')
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         db_table = 'conversations'
@@ -37,6 +51,16 @@ class Conversation(models.Model):
     
     def __str__(self):
         return f"Conversation {self.conversation_id} - {self.project_id.name}"
+    
+    def soft_delete(self):
+        """Mark conversation as deleted"""
+        self.is_delete = True
+        self.save()
+    
+    def restore(self):
+        """Restore deleted conversation"""
+        self.is_delete = False
+        self.save()
 
 
 class Messages(models.Model):
@@ -57,6 +81,7 @@ class Messages(models.Model):
     is_hide = models.BooleanField(default=False)
     is_accept = models.BooleanField(default=False, null=True, blank=True)
     accepted_at = models.DateTimeField(null=True, blank=True)
+    is_delete = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -73,6 +98,16 @@ class Messages(models.Model):
         """Mark message as accepted"""
         self.is_accept = True
         self.accepted_at = timezone.now()
+        self.save()
+    
+    def soft_delete(self):
+        """Mark message as deleted"""
+        self.is_delete = True
+        self.save()
+    
+    def restore(self):
+        """Restore deleted message"""
+        self.is_delete = False
         self.save()
 
 
@@ -98,6 +133,7 @@ class UpdatedCost(models.Model):
     # Status and metadata
     is_accept = models.BooleanField(default=False, null=True, blank=True)
     accepted_at = models.DateTimeField(null=True, blank=True)
+    is_delete = models.BooleanField(default=False)
     
     # Raw response data for reference
     raw_costing_response = models.JSONField(default=dict)
@@ -119,4 +155,14 @@ class UpdatedCost(models.Model):
         """Mark cost update as accepted"""
         self.is_accept = True
         self.accepted_at = timezone.now()
+        self.save()
+    
+    def soft_delete(self):
+        """Mark cost update as deleted"""
+        self.is_delete = True
+        self.save()
+    
+    def restore(self):
+        """Restore deleted cost update"""
+        self.is_delete = False
         self.save()

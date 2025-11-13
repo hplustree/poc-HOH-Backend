@@ -11,7 +11,7 @@ from .serializers import (PDFExtractionSerializer, ProjectSerializer, ChatAccept
                          ProjectVersionOverheadSerializer)
 from chatapp.models import Session, Conversation, Messages
 from authentication.models import UserDetail
-from chatapp.utils import generate_costing_json_from_db, create_sessions_for_all_users_on_project_creation, clear_all_project_data
+from chatapp.utils import generate_costing_json_from_db, create_sessions_for_all_users_on_project_creation
 import logging
 import json
 import requests
@@ -20,18 +20,18 @@ logger = logging.getLogger(__name__)
 
 class PDFExtractionView(APIView):
     """
-    API endpoint to handle document extraction data with complete database reset.
+    API endpoint to handle document extraction data without affecting existing data.
     
     SUPPORTED FORMATS: PDF, DOC, DOCX, TXT, RTF
     
     WORKFLOW:
     1. Validates that uploaded file is in document format only
-    2. Clears ALL existing project data from database (projects, costs, overheads, sessions, conversations, messages)
-    3. Creates new project with incoming data
-    4. Creates sessions and conversations for ALL verified and active users
-    5. Returns comprehensive results including clearing statistics and session creation results
+    2. Creates new project with incoming data (existing data remains untouched)
+    3. Creates sessions and conversations for ALL verified and active users
+    4. Returns comprehensive results including creation statistics and session creation results
     
-    This ensures a fresh start with each document extraction and only accepts document formats.
+    This approach preserves all existing data while adding new project data from document extraction.
+    Only accepts document formats and maintains complete data history.
     """
     permission_classes = [IsAuthenticated]
     
@@ -73,21 +73,10 @@ class PDFExtractionView(APIView):
         overhead_items = data.get('overheads', [])
         
         try:
-            # STEP 1: Clear all existing project data from database (separate transaction)
-            logger.info("Starting PDF extraction with complete data clearing")
-            clear_result = clear_all_project_data()
-            
-            if not clear_result['success']:
-                return Response(
-                    {'error': f'Failed to clear existing data: {clear_result["error"]}'}, 
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-            
-            logger.info(f"Successfully cleared existing data: {clear_result['cleared_counts']}")
-            
-            # STEP 2-4: Create project and related data (separate transaction)
+            # STEP 1: Create project and related data (no deletion of existing data)
+            logger.info("Starting PDF extraction - creating new project without deleting existing data")
             with transaction.atomic():
-                # STEP 2: Create new project with the incoming data
+                # Create new project with the incoming data
                 project = Projects.objects.create(
                     name=project_data['name'],
                     location=project_data.get('location'),
@@ -102,7 +91,7 @@ class PDFExtractionView(APIView):
                 
                 logger.info(f"Created new project: {project.name} (ID: {project.id})")
                 
-                # STEP 3: Create project costs
+                # Create project costs
                 costs_created = 0
                 if cost_items:
                     for item in cost_items:
@@ -118,15 +107,14 @@ class PDFExtractionView(APIView):
                             'line_total': item['line_total'],
                             'category_total': item.get('category_total')
                         }
-                        
                         new_cost = ProjectCosts.objects.create(**cost_data)
                         new_cost._changed_by = f"PDF Import: {filename}"
                         new_cost._change_reason = 'Created from PDF import - fresh start'
                         costs_created += 1
                 
-                logger.info(f"Created {costs_created} project cost items")
+                logger.info(f"Created {costs_created} project costs")
                 
-                # STEP 4: Create project overheads
+                # Create project overheads
                 overheads_created = 0
                 if overhead_items:
                     for item in overhead_items:
@@ -184,9 +172,8 @@ class PDFExtractionView(APIView):
             project_serializer = ProjectSerializer(instance=project)
             response_data = {
                 'status': 'success',
-                'message': 'All existing data cleared and new project created successfully',
+                'message': 'New project created successfully without affecting existing data',
                 'project': project_serializer.data,
-                'data_clearing': clear_result,
                 'creation_summary': {
                     'costs_created': costs_created,
                     'overheads_created': overheads_created
@@ -205,7 +192,7 @@ class PDFExtractionView(APIView):
             return Response(response_data, status=status.HTTP_201_CREATED)
                 
         except Exception as e:
-            logger.error(f"Error processing PDF import with data clearing: {str(e)}", exc_info=True)
+            logger.error(f"Error processing PDF import: {str(e)}", exc_info=True)
             return Response(
                 {'error': f'Failed to process PDF import: {str(e)}'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -489,6 +476,7 @@ class LatestCostingView(APIView):
     """
     API endpoint to fetch latest costing_json data in the exact format required.
     Supports both latest project and specific project by ID.
+    Enhanced with soft delete filtering.
     """
     permission_classes = [IsAuthenticated]
     
@@ -496,12 +484,17 @@ class LatestCostingView(APIView):
         """
         GET /api/budget/api/latest-costing/ - Latest project costing data
         GET /api/budget/api/latest-costing/{project_id}/ - Specific project costing data
+        Query params: ?include_deleted=true to include soft deleted records
         """
         try:
+            # Check if we should include deleted records
+            include_deleted = request.query_params.get('include_deleted', 'false').lower() == 'true'
+            
             # Get costing data using the unified function
             costing_data = generate_costing_json_from_db(
                 project_id=project_id, 
-                include_wrapper=False
+                include_wrapper=False,
+                include_deleted=include_deleted  # Pass the parameter to the function
             )
             
             # Handle error cases
@@ -525,7 +518,7 @@ class LatestCostingView(APIView):
                     'details': serializer.errors
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            logger.info(f"Successfully retrieved costing data for project_id: {project_id or 'latest'}")
+            logger.info(f"Successfully retrieved costing data for project_id: {project_id or 'latest'}, include_deleted: {include_deleted}")
             return Response(response_data, status=status.HTTP_200_OK)
             
         except Exception as e:
@@ -540,20 +533,28 @@ class ProjectVersionHistoryView(APIView):
     """
     API endpoint to fetch complete project version history with costs and overheads for each version.
     GET /api/budget/projects/{project_id}/version-history/
+    Enhanced with soft delete filtering and soft delete operations.
     """
     permission_classes = [IsAuthenticated]
     
     def get(self, request, project_id, format=None):
         """
         Get complete project version history including all costs and overheads for each version
+        Query params: ?include_deleted=true to include soft deleted records
         """
         try:
+            # Check if we should include deleted records
+            include_deleted = request.query_params.get('include_deleted', 'false').lower() == 'true'
+            
             # Get the project
             try:
-                project = Projects.objects.get(id=project_id)
+                if include_deleted:
+                    project = Projects.objects.get(id=project_id)
+                else:
+                    project = Projects.objects.get(id=project_id, is_delete=False)
             except Projects.DoesNotExist:
                 return Response({
-                    'error': 'Project not found'
+                    'error': 'Project not found or has been deleted'
                 }, status=status.HTTP_404_NOT_FOUND)
             
             # Get all project versions (historical data)
@@ -654,3 +655,81 @@ class ProjectVersionHistoryView(APIView):
                 'error': 'Internal server error',
                 'message': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ProjectListView(APIView):
+    """
+    API endpoint to fetch all projects with optional soft delete filtering.
+    Includes latest session_id for each project for the authenticated user.
+    
+    GET /api/budget/projects/
+    Query params: ?include_deleted=true to include soft deleted projects
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, format=None):
+        """
+        Get all projects with optional soft delete filtering and latest session_id
+        """
+        try:
+            # Check if we should include deleted records
+            include_deleted = request.query_params.get('include_deleted', 'false').lower() == 'true'
+            
+            # Get current user's UserDetail
+            try:
+                user_detail = UserDetail.objects.get(email=request.user.email)
+            except UserDetail.DoesNotExist:
+                return Response({
+                    'error': 'User profile not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Filter projects based on soft delete status
+            if include_deleted:
+                projects = Projects.objects.all().order_by('-updated_at')
+                logger.info(f"Fetching all projects including deleted ones for user: {request.user.username}")
+            else:
+                projects = Projects.objects.filter(is_delete=False).order_by('-updated_at')
+                logger.info(f"Fetching active projects only for user: {request.user.username}")
+            
+            # Serialize the projects
+            serialized_projects = ProjectSerializer(projects, many=True).data
+            
+            # Add latest session_id for each project
+            for project_data in serialized_projects:
+                project_id = project_data['id']
+                
+                # Get latest session for this user and project
+                try:
+                    latest_session = Session.objects.filter(
+                        user_id=user_detail,
+                        project_id=project_id,
+                        is_delete=False
+                    ).order_by('-updated_at').first()
+                    
+                    if latest_session:
+                        project_data['session_id'] = latest_session.session_id
+                    else:
+                        project_data['session_id'] = None
+                        
+                except Exception as session_error:
+                    logger.warning(f"Error getting session for project {project_id}: {str(session_error)}")
+                    project_data['session_id'] = None
+            
+            response_data = {
+                'status': 'success',
+                'count': len(serialized_projects),
+                'include_deleted': include_deleted,
+                'projects': serialized_projects
+            }
+            
+            logger.info(f"Successfully retrieved {len(serialized_projects)} projects with session info")
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error fetching projects: {str(e)}")
+            return Response({
+                'error': 'Internal server error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
