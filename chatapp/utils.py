@@ -5,6 +5,9 @@ from collections import defaultdict
 import requests
 import json
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -338,7 +341,7 @@ def build_api_payload(question, session_id, conversation_id=None):
         raise ValueError("Session not found")
 
 
-def send_to_external_api(payload, api_url="http://0.0.0.0:8000/api/chatbot"):
+def send_to_external_api(payload, api_url=os.getenv('ML_BASE_URI') + "/api/chatbot"):
     """
     Send the payload to external API and return response
     """

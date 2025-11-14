@@ -15,6 +15,9 @@ from chatapp.utils import generate_costing_json_from_db, create_sessions_for_all
 import logging
 import json
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -211,7 +214,7 @@ def call_chatbot_decision_accept_api(approval, costing_json, answer):
     Returns:
         dict: API response containing status, answer, costing_json, and final_action
     """
-    api_url = "http://0.0.0.0:8000/api/chatbot-decision-accept"
+    api_url = os.getenv('ML_BASE_URI') + "/api/chatbot-decision-accept"
     
     payload = {
         "approval": approval,
