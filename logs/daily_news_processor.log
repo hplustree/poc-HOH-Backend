@@ -2026,3 +2026,73 @@ ERROR: Error in daily news processing: 404 Client Error: Not Found for url: http
                 DAILY NEWS PROCESSING FAILED                
 ============================================================
 
+2025-11-17 05:49:05,844 - INFO - News fetch API call successful - Status: 200
+2025-11-17 05:49:05,856 - INFO - Retrieved 3 articles from database
+2025-11-17 05:49:05,859 - ERROR - Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+2025-11-17 05:49:05,859 - ERROR - Daily news processing failed: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 53, in handle
+    self.send_to_decision_api(latest_news)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 201, in send_to_decision_api
+    response.raise_for_status()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+Starting daily news processing at 2025-11-17 05:49:01.588972+00:00
+
+STEP 1: Fetching news from external API
+--------------------------------------------------
+Calling news fetch API...
+URL: http://localhost:3000/api/news/fetch/
+Headers: {'Content-Type': 'application/json'}
+News fetch successful!
+Status Code: 200
+Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 1,
+    "total_articles_updated": 0,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 1
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 11,
+      "total_results": 1,
+      "articles_processed": 1,
+      "articles_created": 1,
+      "articles_updated": 0,
+      "articles_skippe...
+
+STEP 2: Retrieving latest news from database
+--------------------------------------------------
+Querying database for latest news...
+<QuerySet [<NewsArticle: ORERA To Enforce Tighter Quarterly Reporting For Real Estate Agents From Dec 2025>, <NewsArticle: [Photo] Swerve Strickland shows off new tattoo amid extended AEW absence>, <NewsArticle: Mumbai: Marathon Launches Three New Bhandup Towers Worth ₹370 Crore>]>
+Retrieved 3 news articles from database
+Sample articles:
+  1. ORERA To Enforce Tighter Quarterly Reporting For Real Estate Agents From Dec 202...
+  2. [Photo] Swerve Strickland shows off new tattoo amid extended AEW absence...
+  3. Mumbai: Marathon Launches Three New Bhandup Towers Worth ₹370 Crore...
+
+STEP 3: Sending news to decision API
+--------------------------------------------------
+Sending news to decision API...
+URL: http://0.0.0.0:8000/api/news_decision
+Headers: {'accept': 'application/json', 'Content-Type': 'application/json'}
+Payload count: 3 articles
+ERROR: Failed to send news to decision API: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+ERROR: Error in daily news processing: 400 Client Error: Bad Request for url: http://0.0.0.0:8000/api/news_decision
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+
