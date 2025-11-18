@@ -87,6 +87,9 @@ class PDFExtractionView(APIView):
                 upload_response = requests.post(upload_url, files=files, headers=headers, timeout=300)
                 upload_response.raise_for_status()
                 upload_data = upload_response.json()
+
+                # /upload-doc wraps the extraction payload under 'data'
+                extraction_payload = upload_data.get('data', upload_data)
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error calling upload-doc API: {str(e)}", exc_info=True)
                 return Response(
@@ -100,9 +103,14 @@ class PDFExtractionView(APIView):
                     status=status.HTTP_502_BAD_GATEWAY
                 )
 
-            serializer = PDFExtractionSerializer(data=upload_data)
+            serializer = PDFExtractionSerializer(data=extraction_payload)
         else:
-            serializer = PDFExtractionSerializer(data=request.data)
+            # For legacy usage where frontend sends JSON directly, also allow a 'data' wrapper
+            if isinstance(request.data, dict) and 'data' in request.data:
+                serializer_input = request.data['data']
+            else:
+                serializer_input = request.data
+            serializer = PDFExtractionSerializer(data=serializer_input)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
