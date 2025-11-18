@@ -70,8 +70,15 @@ class Alert(models.Model):
     """Store decision API responses and alerts"""
     # Alert identification
     alert_id = models.AutoField(primary_key=True)
-    project_id = models.ForeignKey('budget.Projects', on_delete=models.CASCADE, related_name='alerts', null=True, blank=True)
-    decision_key = models.CharField(max_length=50)  # e.g., "1", "2", etc. from response
+    project_id = models.ForeignKey(
+        'budget.Projects',
+        on_delete=models.CASCADE,
+        related_name='alerts',
+        null=True,
+        blank=True,
+        db_column='project_id',
+    )
+    decision_key = models.CharField(max_length=50)
     
     # Decision details
     decision = models.TextField()

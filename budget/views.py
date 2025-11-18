@@ -41,12 +41,16 @@ class PDFExtractionView(APIView):
     
     def post(self, request, format=None):
         # Get the filename from query params
-        filename = request.query_params.get('filename', '')
-        if not filename:
-            return Response(
-                {'error': 'Filename parameter is required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        file_obj = request.FILES.get('files') or request.FILES.get('file')
+        if file_obj:
+            filename = file_obj.name
+        else:
+            filename = request.query_params.get('filename', '')
+            if not filename:
+                return Response(
+                    {'error': 'Filename parameter is required'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         # Validate document format - only allow document formats
         allowed_extensions = ['.pdf', '.doc', '.docx', '.txt', '.rtf']
@@ -67,7 +71,38 @@ class PDFExtractionView(APIView):
             )
         
         # Validate the incoming data
-        serializer = PDFExtractionSerializer(data=request.data)
+        if file_obj:
+            try:
+                base_uri = os.getenv('ML_BASE_URI', 'http://0.0.0.0:8000').rstrip('/')
+                upload_url = f"{base_uri}/api/upload-doc"
+
+                files = {
+                    'files': (file_obj.name, file_obj, getattr(file_obj, 'content_type', 'application/octet-stream'))
+                }
+                headers = {
+                    'accept': 'application/json'
+                }
+
+                logger.info(f"Calling external upload-doc API for file: {file_obj.name}")
+                upload_response = requests.post(upload_url, files=files, headers=headers, timeout=300)
+                upload_response.raise_for_status()
+                upload_data = upload_response.json()
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Error calling upload-doc API: {str(e)}", exc_info=True)
+                return Response(
+                    {'error': 'Failed to process document using upload-doc API', 'message': str(e)},
+                    status=status.HTTP_502_BAD_GATEWAY
+                )
+            except json.JSONDecodeError as e:
+                logger.error(f"Invalid JSON from upload-doc API: {str(e)}", exc_info=True)
+                return Response(
+                    {'error': 'Invalid JSON response from upload-doc API', 'message': str(e)},
+                    status=status.HTTP_502_BAD_GATEWAY
+                )
+
+            serializer = PDFExtractionSerializer(data=upload_data)
+        else:
+            serializer = PDFExtractionSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
