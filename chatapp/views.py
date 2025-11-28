@@ -88,6 +88,8 @@ def send_message(request):
         conversation_id = serializer.validated_data.get('conversation_id')
         content = serializer.validated_data['content']
         message_type = serializer.validated_data['message_type']
+        project_id = serializer.validated_data.get('project_id')
+        version_id = serializer.validated_data.get('version_id')
         
         # Get user from UserDetail model
         user_email = request.user.email if hasattr(request.user, 'email') else None
@@ -132,7 +134,9 @@ def send_message(request):
             api_payload = build_api_payload(
                 question=content,
                 session_id=session_id,
-                conversation_id=conversation_id
+                conversation_id=conversation_id,
+                project_id=project_id,
+                version_id=version_id
             )
             
             # STEP 3: Send to external chatbot API

@@ -6,8 +6,8 @@ from django.db import transaction
 from decimal import Decimal
 from .models import Projects, ProjectCosts, ProjectOverheads, ProjectVersion, ProjectCostVersion, ProjectOverheadVersion
 from .serializers import (PDFExtractionSerializer, ProjectSerializer, ChatAcceptRequestSerializer, 
-                         ChatAcceptResponseSerializer, CostingJsonSerializer, LatestCostingResponseSerializer,
-                         ProjectVersionHistoryResponseSerializer, ProjectDetailSerializer, ProjectVersionCostSerializer, 
+                         ChatAcceptResponseSerializer, LatestCostingResponseSerializer,
+                         ProjectDetailSerializer, ProjectVersionCostSerializer, 
                          ProjectVersionOverheadSerializer)
 from chatapp.models import Session, Conversation, Messages
 from authentication.models import UserDetail
@@ -40,6 +40,8 @@ class PDFExtractionView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request, format=None):
+        external_project_id = None
+        external_version_number = None
         # Get the filename from query params
         file_obj = request.FILES.get('files') or request.FILES.get('file')
         if file_obj:
@@ -75,7 +77,6 @@ class PDFExtractionView(APIView):
             try:
                 base_uri = os.getenv('ML_BASE_URI', 'http://0.0.0.0:8000').rstrip('/')
                 upload_url = f"{base_uri}/api/upload-doc"
-
                 files = {
                     'files': (file_obj.name, file_obj, getattr(file_obj, 'content_type', 'application/octet-stream'))
                 }
@@ -89,6 +90,13 @@ class PDFExtractionView(APIView):
                 upload_data = upload_response.json()
 
                 # /upload-doc wraps the extraction payload under 'data'
+                external_project_id = upload_data.get('project_id')
+                version_id = upload_data.get('version_id')
+                if version_id is not None:
+                    try:
+                        external_version_number = int(version_id)
+                    except (TypeError, ValueError):
+                        logger.warning(f"Invalid version_id from upload-doc API response: {version_id}")
                 extraction_payload = upload_data.get('data', upload_data)
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error calling upload-doc API: {str(e)}", exc_info=True)
@@ -124,13 +132,18 @@ class PDFExtractionView(APIView):
             logger.info("Starting PDF extraction - creating new project without deleting existing data")
             with transaction.atomic():
                 # Create new project with the incoming data
-                project = Projects.objects.create(
-                    name=project_data['name'],
-                    location=project_data.get('location'),
-                    start_date=project_data.get('start_date'),
-                    end_date=project_data.get('end_date'),
-                    total_cost=project_data.get('total_cost')
-                )
+                project_kwargs = {
+                    'name': project_data['name'],
+                    'location': project_data.get('location'),
+                    'start_date': project_data.get('start_date'),
+                    'end_date': project_data.get('end_date'),
+                    'total_cost': project_data.get('total_cost'),
+                }
+                if external_project_id:
+                    project_kwargs['project_id'] = external_project_id
+                if external_version_number is not None:
+                    project_kwargs['version_number'] = external_version_number
+                project = Projects.objects.create(**project_kwargs)
                 
                 # Set change tracking attributes
                 project._changed_by = f"PDF Import: {filename}"
@@ -154,6 +167,8 @@ class PDFExtractionView(APIView):
                             'line_total': item['line_total'],
                             'category_total': item.get('category_total')
                         }
+                        if external_version_number is not None:
+                            cost_data['version_number'] = external_version_number
                         new_cost = ProjectCosts.objects.create(**cost_data)
                         new_cost._changed_by = f"PDF Import: {filename}"
                         new_cost._change_reason = 'Created from PDF import - fresh start'
@@ -173,7 +188,8 @@ class PDFExtractionView(APIView):
                             'percentage': item['percentage'],
                             'amount': item['amount']
                         }
-                        
+                        if external_version_number is not None:
+                            overhead_data['version_number'] = external_version_number
                         new_overhead = ProjectOverheads.objects.create(**overhead_data)
                         new_overhead._changed_by = f"PDF Import: {filename}"
                         new_overhead._change_reason = 'Created from PDF import - fresh start'
@@ -220,6 +236,7 @@ class PDFExtractionView(APIView):
             response_data = {
                 'status': 'success',
                 'message': 'New project created successfully without affecting existing data',
+                'project_id': str(project.project_id),
                 'project': project_serializer.data,
                 'creation_summary': {
                     'costs_created': costs_created,
@@ -246,7 +263,7 @@ class PDFExtractionView(APIView):
             )
 
 
-def call_chatbot_decision_accept_api(approval, costing_json, answer):
+def call_chatbot_decision_accept_api(approval, costing_json, answer, project_id=None, version_id=None):
     """
     Call the external chatbot-decision-accept API
     
@@ -254,6 +271,8 @@ def call_chatbot_decision_accept_api(approval, costing_json, answer):
         approval: 'accept' or 'reject' - user's approval decision
         costing_json: The costing data dictionary
         answer: The answer text extracted from message content
+        project_id: The project ID (optional)
+        version_id: The version ID (optional)
     
     Returns:
         dict: API response containing status, answer, costing_json, and final_action
@@ -265,6 +284,11 @@ def call_chatbot_decision_accept_api(approval, costing_json, answer):
         "costing_json": costing_json,
         "answer": answer
     }
+    
+    if project_id:
+        payload["project_id"] = project_id
+    if version_id:
+        payload["version_id"] = version_id
     
     headers = {
         "accept": "application/json",
@@ -310,6 +334,14 @@ class ChatAcceptView(APIView):
         
         message_id = serializer.validated_data['message_id']
         approval = serializer.validated_data['approval']
+        project_id = serializer.validated_data.get('project_id')
+        version_id = serializer.validated_data.get('version_id')
+
+        if approval == 'accept' and version_id is not None:
+            try:
+                version_id = str(int(version_id) + 1)
+            except (ValueError, TypeError):
+                logger.warning(f"Could not increment version_id: {version_id}")
         
         try:
             # Step 1: Get the message
@@ -319,7 +351,15 @@ class ChatAcceptView(APIView):
             metadata = message.metadata or {}
             chatbot_response = metadata.get('chatbot_response', {})
             costing_json = chatbot_response.get('costing')
-            
+
+            # Prefer project_id and version_id from metadata if available
+            metadata_project_id = chatbot_response.get('project_id')
+            metadata_version_id = chatbot_response.get('version_id')
+            if metadata_project_id:
+                project_id = metadata_project_id
+            if metadata_version_id:
+                version_id = metadata_version_id
+
             # Handle nested data structure if it exists, otherwise use direct structure
             if costing_json and isinstance(costing_json, dict) and 'data' in costing_json:
                 costing_json = costing_json['data']
@@ -330,12 +370,12 @@ class ChatAcceptView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Step 3: Extract answer from message content
-            answer = message.content or ""
+            # Step 3: Extract answer (prefer chatbot_response.answer, fallback to message content)
+            answer = chatbot_response.get('answer') or (message.content or "")
             
             # Step 4: Call external API
-            logger.info(f"Processing chat-accept for message {message_id} with approval: {approval}")
-            api_response = call_chatbot_decision_accept_api(approval, costing_json, answer)
+            logger.info(f"Processing chat-accept for message {message_id} with approval: {approval}, project_id: {project_id}, version_id: {version_id}")
+            api_response = call_chatbot_decision_accept_api(approval, costing_json, answer, project_id, version_id)
             
             # Step 5: Validate API response
             response_serializer = ChatAcceptResponseSerializer(data=api_response)
@@ -346,10 +386,24 @@ class ChatAcceptView(APIView):
                     status=status.HTTP_502_BAD_GATEWAY
                 )
             
-            # Step 6: Get final_action from API response
+            # Step 6: Get final_action and related data from API response
             final_action = api_response.get('final_action')
             api_answer = api_response.get('answer', '')
             updated_costing_json = api_response.get('costing_json', {})
+            api_project_id = api_response.get('project_id')
+            api_version_str = api_response.get('version')
+            previous_version = api_response.get('previous_version')
+
+            # Determine project UUID for update (prefer API response, fallback to metadata/request)
+            project_uuid_for_update = api_project_id or project_id
+
+            # Parse version string to int only when final_action is 'accept'
+            version_int = None
+            if final_action == 'accept' and api_version_str is not None:
+                try:
+                    version_int = int(api_version_str)
+                except (ValueError, TypeError):
+                    logger.warning(f"Could not parse version from API response: {api_version_str}")
             
             # Step 7: Update message based on final_action
             message.is_hide = True
@@ -371,7 +425,10 @@ class ChatAcceptView(APIView):
                     metadata={
                         'source': 'chat_accept_api',
                         'original_message_id': message_id,
-                        'final_action': final_action
+                        'final_action': final_action,
+                        'project_id': project_uuid_for_update,
+                        'version': version_int,
+                        'previous_version': previous_version
                     }
                 )
             
@@ -379,7 +436,7 @@ class ChatAcceptView(APIView):
             budget_updated = False
             if final_action == 'accept' and updated_costing_json:
                 logger.info("Final action is 'accept', updating budget")
-                self._update_budget(updated_costing_json, request.user)
+                self._update_budget(updated_costing_json, request.user, project_uuid_for_update, version_int)
                 budget_updated = True
             else:
                 logger.info(f"Final action is '{final_action}', skipping budget update")
@@ -391,7 +448,10 @@ class ChatAcceptView(APIView):
                 'final_action': final_action,
                 'answer': api_answer,
                 'costing_json': updated_costing_json,
-                'budget_updated': budget_updated
+                'budget_updated': budget_updated,
+                'project_id': project_uuid_for_update,
+                'version': version_int,
+                'previous_version': previous_version
             }, status=status.HTTP_200_OK)
             
         except Messages.DoesNotExist:
@@ -406,7 +466,7 @@ class ChatAcceptView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    def _update_budget(self, costing_json, user):
+    def _update_budget(self, costing_json, user, project_uuid=None, version=None):
         """
         Update budget data with automatic version control
         """
@@ -420,16 +480,21 @@ class ChatAcceptView(APIView):
                     logger.warning("No project name found in costing_json")
                     return
                 
-                # Find or create project
-                project, created = Projects.objects.get_or_create(
-                    name=project_data['name'],
-                    defaults={
-                        'location': project_data.get('location'),
-                        'start_date': project_data.get('start_date'),
-                        'end_date': project_data.get('end_date'),
-                        'total_cost': Decimal(str(project_data.get('total_cost', 0))) if project_data.get('total_cost') else None
-                    }
-                )
+                # Find project by UUID if available, otherwise fall back to name-based lookup
+                project = None
+                created = False
+                if project_uuid:
+                    project = Projects.objects.filter(project_id=project_uuid).first()
+                if project is None:
+                    project, created = Projects.objects.get_or_create(
+                        name=project_data['name'],
+                        defaults={
+                            'location': project_data.get('location'),
+                            'start_date': project_data.get('start_date'),
+                            'end_date': project_data.get('end_date'),
+                            'total_cost': Decimal(str(project_data.get('total_cost', 0))) if project_data.get('total_cost') else None
+                        }
+                    )
                 
                 if not created:
                     # Update existing project
@@ -740,16 +805,22 @@ class ProjectListView(APIView):
             
             # Serialize the projects
             serialized_projects = ProjectSerializer(projects, many=True).data
+
+            # Map DB PK -> public UUID for quick lookup
+            project_uuid_map = {p.id: str(p.project_id) for p in projects}
             
-            # Add latest session_id for each project
+            # Add latest session_id for each project and expose UUID as 'id'
             for project_data in serialized_projects:
-                project_id = project_data['id']
+                # Current value is DB PK from serializer
+                project_pk = project_data['id']
+                # Preserve DB primary key explicitly under project_id
+                project_data['project_id'] = project_pk
                 
-                # Get latest session for this user and project
+                # Get latest session for this user and project (by PK)
                 try:
                     latest_session = Session.objects.filter(
                         user_id=user_detail,
-                        project_id=project_id,
+                        project_id=project_pk,
                         is_delete=False
                     ).order_by('-updated_at').first()
                     
@@ -759,8 +830,11 @@ class ProjectListView(APIView):
                         project_data['session_id'] = None
                         
                 except Exception as session_error:
-                    logger.warning(f"Error getting session for project {project_id}: {str(session_error)}")
+                    logger.warning(f"Error getting session for project {project_pk}: {str(session_error)}")
                     project_data['session_id'] = None
+
+                # Replace 'id' with the project's public UUID (Projects.project_id)
+                project_data['id'] = project_uuid_map.get(project_pk)
             
             response_data = {
                 'status': 'success',

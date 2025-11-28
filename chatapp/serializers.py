@@ -73,6 +73,8 @@ class MessageCreateSerializer(serializers.Serializer):
     conversation_id = serializers.IntegerField(required=False)
     content = serializers.CharField()
     message_type = serializers.ChoiceField(choices=Messages.MESSAGE_TYPES, default='user')
+    project_id = serializers.CharField(required=False, allow_null=True)
+    version_id = serializers.IntegerField(required=False, allow_null=True)
     
     def validate_session_id(self, value):
         try:

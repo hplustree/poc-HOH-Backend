@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+import uuid
 
 
 class VersionNumber(models.Model):
@@ -15,6 +16,7 @@ class VersionNumber(models.Model):
 
 class Projects(models.Model):
     """Main projects table with version control"""
+    project_id = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)
     name = models.CharField(max_length=150)
     location = models.CharField(max_length=255, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)

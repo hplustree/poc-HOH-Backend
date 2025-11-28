@@ -7,6 +7,7 @@ import json
 import logging
 from dotenv import load_dotenv
 import os
+from datetime import datetime
 
 load_dotenv()
 
@@ -306,16 +307,44 @@ def get_accepted_decisions_chat():
         return {}
 
 
-def build_api_payload(question, session_id, conversation_id=None):
-    """
-    Build the complete payload for the external API
+def build_api_payload(question, session_id, conversation_id=None, project_id=None, version_id=None):
+    """Build the complete payload for the external API.
+
+    Args:
+        question: User's question
+        session_id: Session ID
+        conversation_id: Optional conversation ID
+        project_id: Optional project identifier. May be:
+            - None  -> use the project from the session
+            - int   -> treated as Projects.pk
+            - UUID/str -> looked up via Projects.project_id (UUID field)
+        version_id: Optional version number (will be converted to string)
     """
     try:
+        from budget.models import Projects
+
         session = Session.objects.get(session_id=session_id)
-        project_id = session.project_id.id
-        
+
+        # Resolve project instance from provided identifier or session
+        if project_id is None:
+            project = session.project_id
+        else:
+            try:
+                # First try as integer primary key
+                project = Projects.objects.get(id=int(project_id))
+            except (ValueError, TypeError, Projects.DoesNotExist):
+                # Then try as UUID field (project_id)
+                try:
+                    project = Projects.objects.get(project_id=project_id)
+                except Projects.DoesNotExist:
+                    raise ValueError(f"Project not found with identifier: {project_id}")
+
+        # Always use the integer primary key for costing_json generation
+        db_project_id = project.id
+
         # Get costing JSON from project data
-        costing_json = generate_costing_json_from_db(project_id=project_id, include_wrapper=True)
+        costing_json = generate_costing_json_from_db(project_id=db_project_id, include_wrapper=True)
+        
         # Get previous chat history if conversation exists
         previous_chat = {}
         if conversation_id:
@@ -333,8 +362,16 @@ def build_api_payload(question, session_id, conversation_id=None):
             "previous_chat": previous_chat,
             "previous_decision_news": previous_decisions_news,
             "previous_decision_chat": previous_decisions_chat,
-            "costing_json": costing_json
+            "costing_json": costing_json,
         }
+
+        # Add external project_id (UUID or provided identifier) and version_id
+        # Note: costing_json itself always uses the integer DB id internally.
+        if project_id is not None:
+            payload["project_id"] = str(project_id)
+        
+        if version_id is not None:
+            payload["version_id"] = str(version_id)
         
         return payload
         
@@ -379,6 +416,28 @@ def send_to_external_api(payload, api_url=os.getenv('ML_BASE_URI') + "/api/chatb
         }
 
 
+def sanitize_json_for_postgres(data):
+    """
+    Sanitize JSON data by removing null bytes and other problematic Unicode characters
+    that PostgreSQL cannot handle.
+    
+    Args:
+        data: Dictionary, list, string, or any JSON-serializable data
+        
+    Returns:
+        Sanitized data with problematic characters removed
+    """
+    if isinstance(data, dict):
+        return {k: sanitize_json_for_postgres(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_json_for_postgres(item) for item in data]
+    elif isinstance(data, str):
+        # Remove null bytes and other control characters except newlines and tabs
+        return data.replace('\x00', '').replace('\u0000', '')
+    else:
+        return data
+
+
 def save_message_to_db(conversation_id, sender_id, message_type, content, metadata=None):
     """
     Save a message to the database
@@ -395,13 +454,17 @@ def save_message_to_db(conversation_id, sender_id, message_type, content, metada
             except UserDetail.DoesNotExist:
                 pass
         
+        # Sanitize content and metadata to remove null bytes
+        sanitized_content = sanitize_json_for_postgres(content) if content else content
+        sanitized_metadata = sanitize_json_for_postgres(metadata) if metadata else {}
+        
         message = Messages.objects.create(
             conversation=conversation,
             session=conversation.session,  # Auto-populate session from conversation
             sender=sender,
             message_type=message_type,
-            content=content,
-            metadata=metadata or {}
+            content=sanitized_content,
+            metadata=sanitized_metadata
         )
         
         return message
@@ -428,12 +491,12 @@ def save_updated_cost_to_db(conversation_id, message_id, costing_data, raw_respo
         end_date = None
         if project_data.get('start_date'):
             try:
-                start_date = timezone.datetime.fromisoformat(project_data['start_date']).date()
+                start_date = datetime.fromisoformat(project_data['start_date']).date()
             except:
                 pass
         if project_data.get('end_date'):
             try:
-                end_date = timezone.datetime.fromisoformat(project_data['end_date']).date()
+                end_date = datetime.fromisoformat(project_data['end_date']).date()
             except:
                 pass
         
@@ -824,7 +887,10 @@ def get_user_latest_chat_info(user_detail):
         
         return {
             "chat_info_available": True,
+            # Database PK (int) of the project linked to the latest session
             "project_id": latest_session.project_id.id,
+            # Public UUID of the project from Projects.project_id
+            "id": str(latest_session.project_id.project_id),
             "session_id": latest_session.session_id,
             "conversation_id": latest_conversation.conversation_id,
             "project_name": latest_session.project_id.name,

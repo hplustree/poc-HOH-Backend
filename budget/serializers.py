@@ -37,6 +37,8 @@ class ChatAcceptRequestSerializer(serializers.Serializer):
     """Serializer for chat-accept request with message_id and approval"""
     message_id = serializers.IntegerField()
     approval = serializers.ChoiceField(choices=['accept', 'reject'])
+    project_id = serializers.CharField(required=False, allow_null=True)
+    version_id = serializers.CharField(required=False, allow_null=True)
     
     def validate_message_id(self, value):
         """Validate that message exists and has metadata with costing data"""
