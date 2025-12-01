@@ -2236,3 +2236,46 @@ ERROR: Error in daily news processing: 400 Client Error: Bad Request for url: ht
                 DAILY NEWS PROCESSING FAILED                
 ============================================================
 
+2025-12-01 05:49:05,841 - INFO - News fetch API call successful - Status: 200
+2025-12-01 05:49:05,900 - INFO - Retrieved 0 articles from database
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+Starting daily news processing at 2025-12-01 05:49:01.987300+00:00
+
+STEP 1: Fetching news from external API
+--------------------------------------------------
+Calling news fetch API...
+URL: http://localhost:3000/api/news/fetch/
+Headers: {'Content-Type': 'application/json'}
+News fetch successful!
+Status Code: 200
+Response Data: {
+  "success": true,
+  "message": "Sequential news data fetching completed",
+  "summary": {
+    "total_api_calls": 5,
+    "successful_calls": 5,
+    "failed_calls": 0,
+    "total_articles_created": 0,
+    "total_articles_updated": 0,
+    "total_articles_skipped": 0,
+    "total_results_from_api": 0
+  },
+  "detailed_results": [
+    {
+      "api_response_id": 1,
+      "total_results": 0,
+      "articles_processed": 0,
+      "articles_created": 0,
+      "articles_updated": 0,
+      "articles_skipped...
+
+STEP 2: Retrieving latest news from database
+--------------------------------------------------
+Querying database for latest news...
+<QuerySet []>
+Retrieved 0 news articles from database
+WARNING: No news articles found in database

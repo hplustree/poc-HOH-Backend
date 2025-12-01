@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework import generics
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from django.http import StreamingHttpResponse
 from .models import Session, Conversation, Messages, UpdatedCost
 from .serializers import (
     SessionSerializer, ConversationSerializer, ConversationCreateSerializer, MessageSerializer, 
@@ -13,7 +12,6 @@ from .serializers import (
 )
 from .utils import build_api_payload, send_to_external_api, save_message_to_db, save_updated_cost_to_db
 from authentication.models import UserDetail
-import time
 
 
 @api_view(['POST'])
@@ -217,22 +215,6 @@ def send_message(request):
         
         accept_header = request.META.get('HTTP_ACCEPT', '')
         logger.debug(f"send_message Accept header: {accept_header}")
-        if 'text/event-stream' in accept_header and ai_answer is not None:
-            logger.debug("Using SSE streaming response from send_message")
-
-            def event_stream():
-                text = ai_answer
-                words = text.split(' ')
-                for index, word in enumerate(words):
-                    if not word:
-                        continue
-                    chunk = word if index == 0 else f" {word}"
-                    yield f"data: {chunk}\n\n"
-                    # Small delay to make the streaming visually progressive in the UI
-                    time.sleep(0.03)
-
-            return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
-        
         return Response(response_data, status=status.HTTP_200_OK)
         
     except Exception as e:

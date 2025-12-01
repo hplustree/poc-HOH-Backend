@@ -26,7 +26,7 @@ class PDFExtractionView(APIView):
     """
     API endpoint to handle document extraction data without affecting existing data.
     
-    SUPPORTED FORMATS: PDF, DOC, DOCX, TXT, RTF
+    SUPPORTED FORMATS: PDF, DOC, DOCX, TXT, RTF, CSV
     
     WORKFLOW:
     1. Validates that uploaded file is in document format only
@@ -42,20 +42,32 @@ class PDFExtractionView(APIView):
     def post(self, request, format=None):
         external_project_id = None
         external_version_number = None
-        # Get the filename from query params
-        file_obj = request.FILES.get('files') or request.FILES.get('file')
-        if file_obj:
-            filename = file_obj.name
+
+        # Support multiple file uploads while preserving legacy single-file/filename usage
+        uploaded_files = request.FILES.getlist('files') or []
+        single_file = request.FILES.get('file')
+
+        # If only a single "files" entry was sent (not as a list), Django may expose it via get() not getlist()
+        if not uploaded_files:
+            file_from_files_key = request.FILES.get('files')
+            if file_from_files_key is not None:
+                uploaded_files = [file_from_files_key]
+
+        # Determine filename for validation and logging (first file or fallback to query param)
+        if uploaded_files:
+            filename = uploaded_files[0].name
+        elif single_file:
+            filename = single_file.name
         else:
             filename = request.query_params.get('filename', '')
             if not filename:
                 return Response(
-                    {'error': 'Filename parameter is required'}, 
+                    {'error': 'Filename parameter is required when no files are uploaded'}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
         
         # Validate document format - only allow document formats
-        allowed_extensions = ['.pdf', '.doc', '.docx', '.txt', '.rtf']
+        allowed_extensions = ['.pdf', '.doc', '.docx', '.txt', '.rtf', '.xls', '.xlsx', '.csv']
         file_extension = None
         
         # Extract file extension
@@ -66,26 +78,42 @@ class PDFExtractionView(APIView):
             return Response(
                 {
                     'error': 'Invalid file format. Only document formats are allowed.',
-                    'allowed_formats': ['PDF', 'DOC', 'DOCX', 'TXT', 'RTF'],
+                    'allowed_formats': ['PDF', 'DOC', 'DOCX', 'TXT', 'RTF', 'XLS', 'XLSX', 'CSV'],
                     'provided_filename': filename
                 }, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Validate the incoming data
-        if file_obj:
+        # Validate the incoming data / call external upload-doc API when files are provided
+        if uploaded_files or single_file:
             try:
                 base_uri = os.getenv('ML_BASE_URI', 'http://0.0.0.0:8000').rstrip('/')
                 upload_url = f"{base_uri}/api/upload-doc"
-                files = {
-                    'files': (file_obj.name, file_obj, getattr(file_obj, 'content_type', 'application/octet-stream'))
-                }
+
+                # Build multipart files payload to support multiple documents
+                files_payload = []
+                target_files = uploaded_files or [single_file]
+                for f in target_files:
+                    files_payload.append(
+                        (
+                            'files',
+                            (
+                                f.name,
+                                f,
+                                getattr(f, 'content_type', 'application/octet-stream')
+                            ),
+                        )
+                    )
+
                 headers = {
                     'accept': 'application/json'
                 }
 
-                logger.info(f"Calling external upload-doc API for file: {file_obj.name}")
-                upload_response = requests.post(upload_url, files=files, headers=headers, timeout=300)
+                logger.info(
+                    f"Calling external upload-doc API for {len(target_files)} file(s): "
+                    + ", ".join([f.name for f in target_files])
+                )
+                upload_response = requests.post(upload_url, files=files_payload, headers=headers, timeout=300)
                 upload_response.raise_for_status()
                 upload_data = upload_response.json()
 
