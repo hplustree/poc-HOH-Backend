@@ -40,6 +40,7 @@ if parsed_uri.netloc:
 else:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+logger.info(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 # Add additional allowed hosts from environment
 ADDITIONAL_ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=lambda v: [s.strip() for s in v.split(',') if s.strip()])
 ALLOWED_HOSTS.extend(ADDITIONAL_ALLOWED_HOSTS)
