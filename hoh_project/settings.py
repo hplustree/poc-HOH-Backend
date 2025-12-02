@@ -32,28 +32,42 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 # Base URI for the application
-BASE_URI = config('BASE_URI', default='http://localhost:3000')
+RAW_BASE_URI = config('BASE_URI', default='http://localhost:3000')
+
+# Ensure BASE_URI has a scheme; default to https for non-localhost and http for local/dev
+if '://' not in RAW_BASE_URI:
+    if RAW_BASE_URI.startswith(('localhost', '127.0.0.1')):
+        RAW_BASE_URI = f'http://{RAW_BASE_URI}'
+    else:
+        RAW_BASE_URI = f'https://{RAW_BASE_URI}'
+
+parsed_uri = urlparse(RAW_BASE_URI)
+BASE_URI = f"{parsed_uri.scheme}://{parsed_uri.netloc}" if parsed_uri.netloc else RAW_BASE_URI
 
 # Extract host from BASE_URI for ALLOWED_HOSTS
-parsed_uri = urlparse(BASE_URI)
-if parsed_uri.netloc:
-    # Remove port from netloc if present
-    host = parsed_uri.netloc.split(':')[0]
-    ALLOWED_HOSTS = [host]
+base_host = parsed_uri.hostname
+ALLOWED_HOSTS = []
+
+if base_host:
+    ALLOWED_HOSTS.append(base_host)
 else:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    ALLOWED_HOSTS.extend(['localhost', '127.0.0.1'])
 
 # Add additional allowed hosts from environment
-ADDITIONAL_ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=lambda v: [s.strip() for s in v.split(',') if s.strip()])
-ALLOWED_HOSTS.extend(ADDITIONAL_ALLOWED_HOSTS)
+ADDITIONAL_ALLOWED_HOSTS = config(
+    'ALLOWED_HOSTS',
+    default='',
+    cast=lambda v: [s.strip() for s in v.split(',') if s.strip()],
+)
+ALLOWED_HOSTS.extend(h for h in ADDITIONAL_ALLOWED_HOSTS if h not in ALLOWED_HOSTS)
 
-# Always include localhost and 127.0.0.1 for development
-if 'localhost' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('localhost')
-if '127.0.0.1' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('127.0.0.1')
+# Always include localhost and 127.0.0.1 for development and health checks
+for default_host in ['localhost', '127.0.0.1']:
+    if default_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(default_host)
 
 logger = logging.getLogger(__name__)
+logger.info("Configured BASE_URI: %s", BASE_URI)
 logger.info("Configured ALLOWED_HOSTS: %s", ALLOWED_HOSTS)
 
 
