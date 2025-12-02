@@ -13,7 +13,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 from urllib.parse import urlparse
+import logging
 from decouple import config
+
+logging.basicConfig(level=logging.INFO)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,7 +43,6 @@ if parsed_uri.netloc:
 else:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-logger.info(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 # Add additional allowed hosts from environment
 ADDITIONAL_ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=lambda v: [s.strip() for s in v.split(',') if s.strip()])
 ALLOWED_HOSTS.extend(ADDITIONAL_ALLOWED_HOSTS)
@@ -50,6 +52,9 @@ if 'localhost' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('localhost')
 if '127.0.0.1' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('127.0.0.1')
+
+logger = logging.getLogger(__name__)
+logger.info("Configured ALLOWED_HOSTS: %s", ALLOWED_HOSTS)
 
 
 # Application definition
@@ -205,6 +210,28 @@ CORS_ALLOWED_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.security.DisallowedHost': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'hoh_project.settings': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 # Environment-specific settings
 ENVIRONMENT = config('ENVIRONMENT', default='development')
