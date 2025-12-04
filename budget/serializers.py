@@ -123,3 +123,35 @@ class ProjectVersionHistoryResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
     project_detail = ProjectDetailSerializer()
     project_versions = ProjectVersionHistorySerializer(many=True)
+
+
+class DecisionNodeSerializer(serializers.Serializer):
+    """Serializer for individual decision nodes in the project decision graph"""
+    decision_id = serializers.CharField()
+    source = serializers.CharField()
+    question = serializers.CharField(allow_blank=True, allow_null=True)
+    status = serializers.CharField()
+    final_action = serializers.CharField()
+    values_before = serializers.DictField(required=False)
+    values_after = serializers.DictField(required=False)
+    values_after_proposed = serializers.DictField(required=False)
+    decided_at = serializers.DateTimeField(allow_null=True)
+    metadata = serializers.DictField(required=False)
+
+
+class DecisionGraphVersionSerializer(serializers.Serializer):
+    """Serializer for each project version node in the decision graph"""
+    version_number = serializers.IntegerField()
+    created_from_version = serializers.IntegerField(allow_null=True)
+    created_by_decisions = serializers.ListField(child=serializers.CharField())
+    base_data = serializers.DictField()
+    decisions = DecisionNodeSerializer(many=True)
+    version_note = serializers.CharField(allow_blank=True, allow_null=True)
+
+
+class ProjectDecisionGraphResponseSerializer(serializers.Serializer):
+    """Serializer for the complete project decision graph response"""
+    project_id = serializers.IntegerField()
+    project_key = serializers.CharField()
+    current_version = serializers.IntegerField()
+    versions = DecisionGraphVersionSerializer(many=True)

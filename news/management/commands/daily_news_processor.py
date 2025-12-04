@@ -6,6 +6,8 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import datetime
 from news.models import NewsArticle, Alert
+from budget.models import Projects
+from chatapp.utils import generate_costing_json_from_db
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -171,15 +173,12 @@ class Command(BaseCommand):
         try:
             print('Sending news to decision API...')
             
-            # Prepare the payload exactly as specified in the curl command
-            payload = {
-                "news": {
-                    "success": True,
-                    "count": len(news_list),
-                    "results": news_list
-                }
-            }
-            
+            # Fetch all active (non-deleted) projects
+            projects = Projects.objects.filter(is_delete=False).order_by('-updated_at')
+            if not projects.exists():
+                print('WARNING: No active projects found. Skipping decision API calls.')
+                return
+
             # Use the exact URL from the curl command
             url = os.getenv('ML_BASE_URI') + '/api/news_decision'
 
@@ -187,61 +186,107 @@ class Command(BaseCommand):
                 'accept': 'application/json',
                 'Content-Type': 'application/json'
             }
-            
+
             print(f'URL: {url}')
             print(f'Headers: {headers}')
-            print(f'Payload count: {payload["news"]["count"]} articles')
-            
-            response = requests.post(
-                url, 
-                headers=headers, 
-                data=json.dumps(payload),
-                timeout=120
-            )
-            response.raise_for_status()
-            
-            print(f'Decision API call successful!')
-            print(f'Status Code: {response.status_code}')
-            
-            # Log the complete response as requested
-            print('\n' + '='*60)
-            print('DECISION API RESPONSE LOG')
-            print('='*60)
-            
-            # Log response headers
-            print(f'Response Headers: {dict(response.headers)}')
-            print(f'Response Status: {response.status_code}')
-            print(f'Response Time: {response.elapsed.total_seconds():.2f} seconds')
-            print('-' * 60)
-            
-            try:
-                response_json = response.json()
-                formatted_response = json.dumps(response_json, indent=2)
-                print('Response Body (JSON):')
-                print(formatted_response)
-                
-                # Save alerts to database
-                self.save_alerts_to_database(response_json)
-                
-                # Log to file as well
-                self.logger.info(f'Decision API call successful - Status: {response.status_code}')
-                self.logger.info(f'Decision API response headers: {dict(response.headers)}')
-                self.logger.info(f'Decision API response time: {response.elapsed.total_seconds():.2f}s')
-                self.logger.info(f'Decision API response body: {formatted_response}')
-                
-            except json.JSONDecodeError:
-                print('Response Body (Text):')
-                print(response.text)
-                
-                # Log to file as well
-                self.logger.info(f'Decision API call successful - Status: {response.status_code}')
-                self.logger.info(f'Decision API response headers: {dict(response.headers)}')
-                self.logger.info(f'Decision API response time: {response.elapsed.total_seconds():.2f}s')
-                self.logger.info(f'Decision API response body (text): {response.text}')
-                
-            print('='*60)
-            print('END DECISION API RESPONSE LOG')
-            print('='*60 + '\n')
+            print(f'Total articles to send: {len(news_list)}')
+            print(f'Total projects to process: {projects.count()}')
+
+            # Send news + costing for each project one by one
+            for project in projects:
+                try:
+                    print('\n' + '-' * 60)
+                    print(f'Processing project ID {project.id} (project_id={getattr(project, "project_id", "")})')
+
+                    # Prepare project identifiers
+                    project_uuid = str(getattr(project, 'project_id', '') or '')
+                    version_id = str(project.version_number) if getattr(project, 'version_number', None) is not None else ""
+
+                    # Generate costing_json for this project
+                    costing_json = generate_costing_json_from_db(project_id=project.id, include_wrapper=False)
+
+                    # Fallback if costing_json generator returned an error structure
+                    if isinstance(costing_json, dict) and costing_json.get("status") == "error":
+                        print(f'WARNING: Error in costing_json for project {project.id}: {costing_json.get("message")}')
+                        costing_json = {}
+
+                    # Prepare the payload exactly as specified in the curl command
+                    payload = {
+                        "project_id": project_uuid,
+                        "version_id": version_id,
+                        "news": {
+                            "success": True,
+                            "count": len(news_list),
+                            "results": news_list
+                        },
+                        "costing_json": costing_json,
+                    }
+
+                    print(f'Sending payload for project_id={project_uuid}, version_id={version_id}')
+
+                    response = requests.post(
+                        url,
+                        headers=headers,
+                        data=json.dumps(payload),
+                        timeout=120
+                    )
+                    response.raise_for_status()
+
+                    print(f'Decision API call successful for project_id={project_uuid}!')
+                    print(f'Status Code: {response.status_code}')
+
+                    # Log the complete response as requested
+                    print('\n' + '='*60)
+                    print('DECISION API RESPONSE LOG')
+                    print('='*60)
+
+                    # Log response headers
+                    print(f'Response Headers: {dict(response.headers)}')
+                    print(f'Response Status: {response.status_code}')
+                    print(f'Response Time: {response.elapsed.total_seconds():.2f} seconds')
+                    print('-' * 60)
+
+                    try:
+                        response_json = response.json()
+                        formatted_response = json.dumps(response_json, indent=2)
+                        print('Response Body (JSON):')
+                        print(formatted_response)
+
+                        # Save alerts to database with project reference
+                        self.save_alerts_to_database(response_json, project)
+
+                        # Log to file as well
+                        self.logger.info(f'Decision API call successful for project_id={project_uuid} - Status: {response.status_code}')
+                        self.logger.info(f'Decision API response headers: {dict(response.headers)}')
+                        self.logger.info(f'Decision API response time: {response.elapsed.total_seconds():.2f}s')
+                        self.logger.info(f'Decision API response body: {formatted_response}')
+
+                    except json.JSONDecodeError:
+                        print('Response Body (Text):')
+                        print(response.text)
+
+                        # Log to file as well
+                        self.logger.info(f'Decision API call successful for project_id={project_uuid} - Status: {response.status_code}')
+                        self.logger.info(f'Decision API response headers: {dict(response.headers)}')
+                        self.logger.info(f'Decision API response time: {response.elapsed.total_seconds():.2f}s')
+                        self.logger.info(f'Decision API response body (text): {response.text}')
+
+                    print('='*60)
+                    print('END DECISION API RESPONSE LOG')
+                    print('='*60 + '\n')
+
+                except requests.RequestException as e:
+                    error_msg = f'Failed to send news to decision API for project_id={getattr(project, "project_id", "")}: {str(e)}'
+                    print(f'ERROR: {error_msg}')
+                    self.logger.error(error_msg)
+                    # Continue with next project instead of raising
+                    continue
+                except Exception as e:
+                    error_msg = f'Unexpected error in decision API call for project_id={getattr(project, "project_id", "")}: {str(e)}'
+                    print(f'ERROR: {error_msg}')
+                    self.logger.error(error_msg)
+                    # Continue with next project
+                    continue
             
         except requests.RequestException as e:
             error_msg = f'Failed to send news to decision API: {str(e)}'
@@ -254,12 +299,12 @@ class Command(BaseCommand):
             self.logger.error(error_msg)
             raise
 
-    def save_alerts_to_database(self, response_data):
+    def save_alerts_to_database(self, response_data, project):
         """
         Save decision API response alerts to the database
         """
         try:
-            print('Saving alerts to database...')
+            print(f'Saving alerts to database for project_id={getattr(project, "project_id", "")}...')
             
             if 'response' not in response_data:
                 print('WARNING: No response data found to save')
@@ -275,8 +320,9 @@ class Command(BaseCommand):
                     old_values = updated_costing.get('old_values', {})
                     new_values = updated_costing.get('new_values', {})
                     
-                    # Create Alert object
+                    # Create Alert object and link to this project
                     alert = Alert.objects.create(
+                        project_id=project,
                         decision_key=decision_key,
                         decision=alert_data.get('decision', ''),
                         reason=alert_data.get('reason', ''),

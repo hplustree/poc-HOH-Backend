@@ -554,7 +554,7 @@ def create_session_and_conversation_if_projects_exist(user_detail):
         logger.info(f"Starting session creation for user: {user_detail.email} for ALL projects")
         
         # Get all active (not soft-deleted) projects
-        projects = Projects.objects.filter(is_delete=False).order_by('-updated_at')
+        projects = Projects.objects.none()
         
         if not projects.exists():
             logger.warning("No projects exist in the system")

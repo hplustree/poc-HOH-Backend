@@ -8,10 +8,11 @@ from .models import Projects, ProjectCosts, ProjectOverheads, ProjectVersion, Pr
 from .serializers import (PDFExtractionSerializer, ProjectSerializer, ChatAcceptRequestSerializer, 
                          ChatAcceptResponseSerializer, LatestCostingResponseSerializer,
                          ProjectDetailSerializer, ProjectVersionCostSerializer, 
-                         ProjectVersionOverheadSerializer)
+                         ProjectVersionOverheadSerializer, ProjectDecisionGraphResponseSerializer)
 from chatapp.models import Session, Conversation, Messages
+from news.models import Alert
 from authentication.models import UserDetail
-from chatapp.utils import generate_costing_json_from_db, create_sessions_for_all_users_on_project_creation
+from chatapp.utils import generate_costing_json_from_db
 import logging
 import json
 import requests
@@ -225,18 +226,74 @@ class PDFExtractionView(APIView):
                 
                 logger.info(f"Created {overheads_created} project overhead items")
             
-            # STEP 5: Create sessions and conversations for ALL users (separate transaction)
+            # STEP 5: Create session and conversation for the current user only (separate transaction)
             session_creation_result = None
             try:
-                logger.info(f"Creating sessions for all users for new project: {project.name}")
-                session_creation_result = create_sessions_for_all_users_on_project_creation(project)
-                logger.info(f"Session creation completed: {session_creation_result}")
+                user_detail = UserDetail.objects.filter(email=request.user.email).first()
+                if user_detail:
+                    existing_session = Session.objects.filter(
+                        user_id=user_detail,
+                        project_id=project,
+                        is_delete=False
+                    ).order_by('-updated_at').first()
+                    if not existing_session:
+                        session = Session.objects.create(
+                            project_id=project,
+                            user_id=user_detail,
+                            is_active=True
+                        )
+                        conversation = Conversation.objects.create(
+                            session=session,
+                            project_id=project
+                        )
+                        welcome_message = (
+                            f"Welcome to {project.name}! I'm your AI assistant ready to help you with "
+                            f"project-related questions and cost management."
+                        )
+                        Messages.objects.create(
+                            conversation=conversation,
+                            session=session,
+                            sender=None,  # AI message
+                            message_type='assistant',
+                            content=welcome_message,
+                            metadata={
+                                'welcome_message': True,
+                                'project_info': {
+                                    'name': project.name,
+                                    'location': project.location or ""
+                                }
+                            }
+                        )
+                        session_creation_result = {
+                            "success": True,
+                            "users_processed": 1,
+                            "sessions_created": 1,
+                            "conversations_created": 1,
+                            "errors": []
+                        }
+                    else:
+                        session_creation_result = {
+                            "success": True,
+                            "users_processed": 1,
+                            "sessions_created": 0,
+                            "conversations_created": 0,
+                            "errors": []
+                        }
+                else:
+                    session_creation_result = {
+                        "success": False,
+                        "error": "User profile not found for authenticated user"
+                    }
             except Exception as session_error:
-                logger.error(f"Error creating sessions for all users: {str(session_error)}", exc_info=True)
-                session_creation_result = {
-                    "success": False,
-                    "error": f"Failed to create sessions: {str(session_error)}"
-                }
+                logger.error(
+                    f"Error creating session for current user and project '{project.name}': {str(session_error)}",
+                    exc_info=True
+                )
+                if not session_creation_result:
+                    session_creation_result = {
+                        "success": False,
+                        "error": f"Failed to create session: {str(session_error)}"
+                    }
             
             # Get current user's session info for response
             session_created = False
@@ -823,13 +880,26 @@ class ProjectListView(APIView):
                     'error': 'User profile not found'
                 }, status=status.HTTP_404_NOT_FOUND)
             
-            # Filter projects based on soft delete status
+            # Find projects linked to this user via chat sessions
+            user_project_ids = Session.objects.filter(
+                user_id=user_detail,
+                is_delete=False
+            ).values_list('project_id', flat=True).distinct()
+
+            # Filter projects based on soft delete status and user sessions
             if include_deleted:
-                projects = Projects.objects.all().order_by('-updated_at')
-                logger.info(f"Fetching all projects including deleted ones for user: {request.user.username}")
+                projects = Projects.objects.filter(id__in=user_project_ids).order_by('-updated_at')
+                logger.info(
+                    f"Fetching all projects (including deleted) for user: {request.user.username}"
+                )
             else:
-                projects = Projects.objects.filter(is_delete=False).order_by('-updated_at')
-                logger.info(f"Fetching active projects only for user: {request.user.username}")
+                projects = Projects.objects.filter(
+                    id__in=user_project_ids,
+                    is_delete=False
+                ).order_by('-updated_at')
+                logger.info(
+                    f"Fetching active projects only for user: {request.user.username}"
+                )
             
             # Serialize the projects
             serialized_projects = ProjectSerializer(projects, many=True).data
@@ -881,4 +951,324 @@ class ProjectListView(APIView):
                 'message': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+class ProjectDecisionGraphView(APIView):
+    """API endpoint to fetch a decision graph for a project with all versions and decisions.
+    
+    GET /api/budget/projects/{project_id}/decision-graph/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, project_id, format=None):
+        try:
+            include_deleted = request.query_params.get('include_deleted', 'false').lower() == 'true'
+
+            # Get the project
+            try:
+                if include_deleted:
+                    project = Projects.objects.get(id=project_id)
+                else:
+                    project = Projects.objects.get(id=project_id, is_delete=False)
+            except Projects.DoesNotExist:
+                return Response({
+                    'error': 'Project not found or has been deleted'
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            # Build version nodes (historical versions + current)
+            project_versions = ProjectVersion.objects.filter(project=project).order_by('version_number')
+            version_nodes = []
+
+            for version in project_versions:
+                base_data = self._build_base_data_for_version(project, version.version_number, historical=True, version_obj=version)
+                version_nodes.append({
+                    'version_number': version.version_number,
+                    'created_from_version': version.version_number - 1 if version.version_number > 1 else None,
+                    'created_by_decisions': [],
+                    'base_data': base_data,
+                    'decisions': [],
+                    'version_note': version.change_reason or ''
+                })
+
+            # Current version node from main tables
+            current_base_data = self._build_base_data_for_version(project, project.version_number, historical=False)
+            version_nodes.append({
+                'version_number': project.version_number,
+                'created_from_version': project.version_number - 1 if project.version_number > 1 else None,
+                'created_by_decisions': [],
+                'base_data': current_base_data,
+                'decisions': [],
+                'version_note': 'Current version'
+            })
+
+            # Sort by version number and prepare timestamp map
+            version_nodes.sort(key=lambda x: x['version_number'])
+            version_index_map = {node['version_number']: idx for idx, node in enumerate(version_nodes)}
+
+            version_timestamps = {}
+            for version in project_versions:
+                version_timestamps[version.version_number] = version.updated_at
+            version_timestamps[project.version_number] = project.updated_at
+
+            # Collect all decisions (news alerts + chat decisions)
+            decisions = []
+
+            # News alerts
+            alerts_qs = Alert.objects.filter(project_id=project).order_by('created_at')
+            for alert in alerts_qs:
+                decided_at = alert.accepted_at or alert.updated_at or alert.created_at
+                if alert.is_accept is True:
+                    status_value = 'accepted'
+                    final_action = 'accept'
+                elif alert.is_accept is False:
+                    status_value = 'rejected'
+                    final_action = 'reject'
+                else:
+                    status_value = 'pending'
+                    final_action = 'pending'
+
+                decision = {
+                    'decision_id': f'news-{alert.alert_id}',
+                    'source': 'news_alert',
+                    'question': alert.decision,
+                    'status': status_value,
+                    'final_action': final_action,
+                    'values_before': {
+                        'category_name': alert.category_name,
+                        'item_description': alert.item,
+                        'supplier_brand': alert.old_supplier_brand,
+                        'rate_per_unit': alert.old_rate_per_unit,
+                        'line_total': alert.old_line_total,
+                    },
+                    'values_after': {
+                        'category_name': alert.category_name,
+                        'item_description': alert.item,
+                        'supplier_brand': alert.new_supplier_brand,
+                        'rate_per_unit': alert.new_rate_per_unit,
+                        'line_total': alert.new_line_total,
+                    },
+                    'values_after_proposed': {},
+                    'decided_at': decided_at,
+                    'metadata': {
+                        'alert_id': alert.alert_id,
+                        'decision_key': alert.decision_key,
+                        'reason': alert.reason,
+                        'suggestion': alert.suggestion,
+                        'cost_impact': alert.cost_impact,
+                    },
+                }
+                decisions.append(decision)
+
+            # Chat-based decisions (message accept/reject) using is_hide/is_accept rule
+            chat_qs = Messages.objects.filter(
+                conversation__project_id=project,
+                is_delete=False,
+                is_hide=True,
+            ).filter(is_accept__isnull=False).order_by('created_at')
+
+            for message in chat_qs:
+                decided_at = message.accepted_at or message.updated_at or message.created_at
+
+                # Apply interpretation rule:
+                # is_hide = True and is_accept = True  -> accepted
+                # is_hide = True and is_accept = False -> rejected
+                if message.is_accept is True:
+                    status_value = 'accepted'
+                    final_action = 'accept'
+                else:
+                    status_value = 'rejected'
+                    final_action = 'reject'
+
+                metadata = message.metadata or {}
+                chatbot_response = metadata.get('chatbot_response', {})
+                costing = chatbot_response.get('costing')
+                if costing and isinstance(costing, dict) and 'data' in costing:
+                    costing = costing['data']
+
+                decision = {
+                    'decision_id': f'chat-{message.message_id}',
+                    'source': 'chat',
+                    'question': message.content,
+                    'status': status_value,
+                    'final_action': final_action,
+                    'values_before': {},
+                    'values_after': {},
+                    'values_after_proposed': costing or {},
+                    'decided_at': decided_at,
+                    'metadata': {
+                        'message_id': message.message_id,
+                        'session_id': message.session.session_id if message.session else None,
+                        'conversation_id': message.conversation.conversation_id if message.conversation else None,
+                    },
+                }
+                decisions.append(decision)
+
+            # Attach decisions to versions based on timestamps
+            version_numbers = sorted(version_timestamps.keys())
+            timeline = [(vn, version_timestamps[vn]) for vn in version_numbers]
+
+            for decision in decisions:
+                ts = decision['decided_at']
+                target_version = None
+
+                if ts is None:
+                    target_version = version_numbers[-1]
+                else:
+                    for vn, vts in timeline:
+                        if ts <= vts:
+                            target_version = vn
+                            break
+                    if target_version is None:
+                        target_version = version_numbers[-1]
+
+                idx = version_index_map.get(target_version)
+                if idx is not None:
+                    version_nodes[idx]['decisions'].append(decision)
+
+            # Compute created_by_decisions for versions > 1
+            for i, vn in enumerate(version_numbers):
+                if i == 0:
+                    continue
+
+                current_ts = version_timestamps[vn]
+                previous_vn = version_numbers[i - 1]
+                previous_ts = version_timestamps[previous_vn]
+                node_index = version_index_map.get(vn)
+                if node_index is None:
+                    continue
+
+                created_ids = []
+                for decision in decisions:
+                    ts = decision['decided_at']
+                    if ts is None:
+                        continue
+                    if ts > previous_ts and ts <= current_ts and decision['final_action'] == 'accept':
+                        created_ids.append(decision['decision_id'])
+
+                version_nodes[node_index]['created_from_version'] = previous_vn
+                version_nodes[node_index]['created_by_decisions'] = created_ids
+
+            response_payload = {
+                'project_id': project.id,
+                'project_key': self._build_project_key(project.name),
+                'current_version': project.version_number,
+                'versions': version_nodes,
+            }
+
+            response_serializer = ProjectDecisionGraphResponseSerializer(data=response_payload)
+            if not response_serializer.is_valid():
+                logger.error(f"Invalid decision graph data: {response_serializer.errors}")
+                return Response({
+                    'error': 'Invalid decision graph data',
+                    'details': response_serializer.errors
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            logger.info(f"Successfully built decision graph for project {project_id} with {len(version_nodes)} versions")
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error fetching project decision graph: {str(e)}", exc_info=True)
+            return Response({
+                'error': 'Internal server error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _build_base_data_for_version(self, project, version_number, historical=False, version_obj=None):
+        """Build base_data structure (project + costs + overheads) for a specific version."""
+        if historical and version_obj is not None:
+            project_snapshot = {
+                'name': version_obj.name,
+                'location': version_obj.location,
+                'total_cost': float(version_obj.total_cost) if version_obj.total_cost is not None else None,
+                'start_date': version_obj.start_date,
+                'end_date': version_obj.end_date,
+            }
+
+            version_costs = ProjectCostVersion.objects.filter(
+                project=project,
+                version_number=version_number
+            ).order_by('id')
+
+            cost_line_items = []
+            for cost in version_costs:
+                cost_line_items.append({
+                    'id': cost.id,
+                    'category_code': cost.category_code,
+                    'category_name': cost.category_name,
+                    'item_description': cost.item_description,
+                    'supplier_brand': cost.supplier_brand,
+                    'unit': cost.unit,
+                    'quantity': float(cost.quantity) if cost.quantity is not None else None,
+                    'rate_per_unit': float(cost.rate_per_unit) if cost.rate_per_unit is not None else None,
+                    'line_total': float(cost.line_total) if cost.line_total is not None else None,
+                    'category_total': float(cost.category_total) if cost.category_total is not None else None,
+                })
+
+            version_overheads = ProjectOverheadVersion.objects.filter(
+                project=project,
+                version_number=version_number
+            ).order_by('id')
+
+            overheads = []
+            for overhead in version_overheads:
+                overheads.append({
+                    'id': overhead.id,
+                    'overhead_type': overhead.overhead_type,
+                    'basis': overhead.basis,
+                    'description': overhead.description,
+                    'percentage': float(overhead.percentage) if overhead.percentage is not None else None,
+                    'amount': float(overhead.amount) if overhead.amount is not None else None,
+                })
+
+        else:
+            project_snapshot = {
+                'name': project.name,
+                'location': project.location,
+                'total_cost': float(project.total_cost) if project.total_cost is not None else None,
+                'start_date': project.start_date,
+                'end_date': project.end_date,
+            }
+
+            current_costs = ProjectCosts.objects.filter(project=project).order_by('id')
+            cost_line_items = []
+            for cost in current_costs:
+                cost_line_items.append({
+                    'id': cost.id,
+                    'category_code': cost.category_code,
+                    'category_name': cost.category_name,
+                    'item_description': cost.item_description,
+                    'supplier_brand': cost.supplier_brand,
+                    'unit': cost.unit,
+                    'quantity': float(cost.quantity) if cost.quantity is not None else None,
+                    'rate_per_unit': float(cost.rate_per_unit) if cost.rate_per_unit is not None else None,
+                    'line_total': float(cost.line_total) if cost.line_total is not None else None,
+                    'category_total': float(cost.category_total) if cost.category_total is not None else None,
+                })
+
+            current_overheads = ProjectOverheads.objects.filter(project=project).order_by('id')
+            overheads = []
+            for overhead in current_overheads:
+                overheads.append({
+                    'id': overhead.id,
+                    'overhead_type': overhead.overhead_type,
+                    'basis': overhead.basis,
+                    'description': overhead.description,
+                    'percentage': float(overhead.percentage) if overhead.percentage is not None else None,
+                    'amount': float(overhead.amount) if overhead.amount is not None else None,
+                })
+
+        return {
+            'project': project_snapshot,
+            'cost_line_items': cost_line_items,
+            'overheads': overheads,
+        }
+
+    def _build_project_key(self, name):
+        """Generate a stable project_key from the project name."""
+        if not name:
+            return 'PROJECT'
+        key = ''.join(ch if ch.isalnum() else '_' for ch in name).upper()
+        # Normalize multiple underscores
+        parts = [p for p in key.split('_') if p]
+        return '_'.join(parts) or 'PROJECT'
 

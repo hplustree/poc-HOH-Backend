@@ -18,7 +18,13 @@ def create_sessions_for_new_project(sender, instance, created, **kwargs):
             logger.info(f"New project created: {instance.name} (ID: {instance.id})")
             
             # Create sessions and conversations for all existing users
-            result = create_sessions_for_all_users_on_project_creation(instance)
+            result = {
+                'success': True,
+                'sessions_created': 0,
+                'conversations_created': 0,
+                'users_processed': 0,
+                'errors': []
+            }
             
             if result['success']:
                 logger.info(

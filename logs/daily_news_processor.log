@@ -2279,3 +2279,208 @@ Querying database for latest news...
 <QuerySet []>
 Retrieved 0 news articles from database
 WARNING: No news articles found in database
+INFO:hoh_project.settings:Configured BASE_URI: https://hoh.fxisai.com
+INFO:hoh_project.settings:Configured ALLOWED_HOSTS: ['hoh.fxisai.com', 'localhost', '127.0.0.1']
+ERROR:news.management.commands.daily_news_processor:Failed to fetch news from endpoint: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+ERROR:news.management.commands.daily_news_processor:Daily news processing failed: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 41, in handle
+    self.fetch_news_from_endpoint()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 92, in fetch_news_from_endpoint
+    response = requests.post(url, headers=headers, timeout=120)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 575, in request
+    prep = self.prepare_request(req)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 368, in prepare
+    self.prepare_url(url, params)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 439, in prepare_url
+    raise MissingSchema(
+requests.exceptions.MissingSchema: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+Starting daily news processing at 2025-12-03 05:49:03.284645+00:00
+
+STEP 1: Fetching news from external API
+--------------------------------------------------
+Calling news fetch API...
+URL: hoh.fxisai.com/api/news/fetch/
+Headers: {'Content-Type': 'application/json'}
+ERROR: Failed to fetch news from endpoint: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+ERROR: Error in daily news processing: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+
+INFO:hoh_project.settings:Configured BASE_URI: https://hoh.fxisai.com
+INFO:hoh_project.settings:Configured ALLOWED_HOSTS: ['hoh.fxisai.com', 'localhost', '127.0.0.1']
+ERROR:news.management.commands.daily_news_processor:Failed to fetch news from endpoint: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+ERROR:news.management.commands.daily_news_processor:Daily news processing failed: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 43, in handle
+    self.fetch_news_from_endpoint()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 94, in fetch_news_from_endpoint
+    response = requests.post(url, headers=headers, timeout=120)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 575, in request
+    prep = self.prepare_request(req)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 368, in prepare
+    self.prepare_url(url, params)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 439, in prepare_url
+    raise MissingSchema(
+requests.exceptions.MissingSchema: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+Starting daily news processing at 2025-12-03 07:17:01.746955+00:00
+
+STEP 1: Fetching news from external API
+--------------------------------------------------
+Calling news fetch API...
+URL: hoh.fxisai.com/api/news/fetch/
+Headers: {'Content-Type': 'application/json'}
+ERROR: Failed to fetch news from endpoint: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+ERROR: Error in daily news processing: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+
+INFO:hoh_project.settings:Configured BASE_URI: https://hoh.fxisai.com
+INFO:hoh_project.settings:Configured ALLOWED_HOSTS: ['hoh.fxisai.com', 'localhost', '127.0.0.1']
+ERROR:news.management.commands.daily_news_processor:Failed to fetch news from endpoint: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+ERROR:news.management.commands.daily_news_processor:Daily news processing failed: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 43, in handle
+    self.fetch_news_from_endpoint()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 94, in fetch_news_from_endpoint
+    response = requests.post(url, headers=headers, timeout=120)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 575, in request
+    prep = self.prepare_request(req)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 368, in prepare
+    self.prepare_url(url, params)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 439, in prepare_url
+    raise MissingSchema(
+requests.exceptions.MissingSchema: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+Starting daily news processing at 2025-12-03 08:45:02.167467+00:00
+
+STEP 1: Fetching news from external API
+--------------------------------------------------
+Calling news fetch API...
+URL: hoh.fxisai.com/api/news/fetch/
+Headers: {'Content-Type': 'application/json'}
+ERROR: Failed to fetch news from endpoint: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+ERROR: Error in daily news processing: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+
+INFO:hoh_project.settings:Configured BASE_URI: https://hoh.fxisai.com
+INFO:hoh_project.settings:Configured ALLOWED_HOSTS: ['hoh.fxisai.com', 'localhost', '127.0.0.1']
+ERROR:news.management.commands.daily_news_processor:Failed to fetch news from endpoint: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+ERROR:news.management.commands.daily_news_processor:Daily news processing failed: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 43, in handle
+    self.fetch_news_from_endpoint()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 94, in fetch_news_from_endpoint
+    response = requests.post(url, headers=headers, timeout=120)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 575, in request
+    prep = self.prepare_request(req)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 368, in prepare
+    self.prepare_url(url, params)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 439, in prepare_url
+    raise MissingSchema(
+requests.exceptions.MissingSchema: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+Starting daily news processing at 2025-12-03 09:29:01.567926+00:00
+
+STEP 1: Fetching news from external API
+--------------------------------------------------
+Calling news fetch API...
+URL: hoh.fxisai.com/api/news/fetch/
+Headers: {'Content-Type': 'application/json'}
+ERROR: Failed to fetch news from endpoint: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+ERROR: Error in daily news processing: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+
+INFO:hoh_project.settings:Configured BASE_URI: https://hoh.fxisai.com
+INFO:hoh_project.settings:Configured ALLOWED_HOSTS: ['hoh.fxisai.com', 'localhost', '127.0.0.1']
+ERROR:news.management.commands.daily_news_processor:Failed to fetch news from endpoint: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+ERROR:news.management.commands.daily_news_processor:Daily news processing failed: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+Traceback (most recent call last):
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 43, in handle
+    self.fetch_news_from_endpoint()
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/news/management/commands/daily_news_processor.py", line 94, in fetch_news_from_endpoint
+    response = requests.post(url, headers=headers, timeout=120)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 575, in request
+    prep = self.prepare_request(req)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 368, in prepare
+    self.prepare_url(url, params)
+  File "/home/fx/Desktop/proj/HOH/HOHBackend/venv/lib/python3.10/site-packages/requests/models.py", line 439, in prepare_url
+    raise MissingSchema(
+requests.exceptions.MissingSchema: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+
+============================================================
+               DAILY NEWS PROCESSING STARTED                
+============================================================
+
+Starting daily news processing at 2025-12-03 10:55:01.976017+00:00
+
+STEP 1: Fetching news from external API
+--------------------------------------------------
+Calling news fetch API...
+URL: hoh.fxisai.com/api/news/fetch/
+Headers: {'Content-Type': 'application/json'}
+ERROR: Failed to fetch news from endpoint: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+ERROR: Error in daily news processing: Invalid URL 'hoh.fxisai.com/api/news/fetch/': No scheme supplied. Perhaps you meant https://hoh.fxisai.com/api/news/fetch/?
+
+============================================================
+                DAILY NEWS PROCESSING FAILED                
+============================================================
+

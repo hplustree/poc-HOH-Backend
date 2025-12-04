@@ -62,6 +62,18 @@ class NewsDecisionAcceptRequestSerializer(serializers.Serializer):
         child=serializers.IntegerField(),
         help_text="List of alert IDs to process"
     )
+    project_id = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        help_text="Optional project identifier (string/UUID) to use for costing data"
+    )
+    version_id = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        help_text="Optional version ID (string) to pass through to external API"
+    )
 
 
 class NewsDecisionAcceptResponseSerializer(serializers.Serializer):

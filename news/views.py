@@ -1,4 +1,5 @@
 import os
+import json
 import requests
 import logging
 from datetime import datetime, timedelta
@@ -333,21 +334,24 @@ def get_news_articles(request):
 @permission_classes([IsAuthenticated])
 def get_unsent_alerts(request):
     """
-    Get alerts from previous day where is_sent = false and is_accept = false
+    Get all-time alerts where is_sent = false and is_accept = false
     """
     try:
-        # Calculate previous day date range
         now = timezone.now()
-        previous_day_start = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-        previous_day_end = (now - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
-        
-        # Get unsent alerts from previous day only where is_accept = False
-        alerts = Alert.objects.filter(
+
+        # Optional filtering by project_id (if provided as query parameter)
+        project_id = request.GET.get('project_id')
+
+        # Get all unsent alerts (all-time) where is_accept = False
+        alerts_qs = Alert.objects.filter(
             is_sent=False,
-            is_accept=False,
-            created_at__gte=previous_day_start,
-            created_at__lte=previous_day_end
-        ).order_by('-created_at')
+            is_accept=False
+        )
+
+        if project_id:
+            alerts_qs = alerts_qs.filter(project_id=project_id)
+
+        alerts = alerts_qs.order_by('-created_at')
         
         # Serialize data
         serializer = AlertSerializer(alerts, many=True)
@@ -357,15 +361,15 @@ def get_unsent_alerts(request):
             'count': len(serializer.data),
             'alerts': serializer.data,
             'filter_info': {
-                'previous_day_start': previous_day_start.isoformat(),
-                'previous_day_end': previous_day_end.isoformat(),
-                'current_time': now.isoformat()
+                'current_time': now.isoformat(),
+                'note': 'Fetching all-time unsent alerts (no date filtering)',
+                'project_id': project_id
             }
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
         return Response({
-            'error': 'Failed to retrieve previous day unsent alerts',
+            'error': 'Failed to retrieve unsent alerts',
             'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -380,8 +384,16 @@ def get_and_mark_accepted_alerts(request):
     try:
         from budget.models import ProjectCosts
         
+        # Optional filtering by project_id (can come from body or query params)
+        project_id = request.data.get('project_id') or request.GET.get('project_id')
+
         # Get alerts that are accepted but not sent yet
-        alerts = Alert.objects.filter(is_sent=False, is_accept=True).order_by('-created_at')
+        alerts_qs = Alert.objects.filter(is_sent=False, is_accept=True)
+
+        if project_id:
+            alerts_qs = alerts_qs.filter(project_id=project_id)
+
+        alerts = alerts_qs.order_by('-created_at')
         
         if not alerts.exists():
             return Response({
@@ -564,24 +576,44 @@ def update_alert_status(request, alert_id):
 
 
 
-def get_latest_project_costing_data():
+def get_latest_project_costing_data(project_id=None):
     """
-    Get the latest project costing data in the required format.
+    Get project costing data in the required format.
+    If project_id is provided, use that project; otherwise use the latest project.
     Uses the unified costing generator from chatapp.utils.
     """
     try:
         from chatapp.utils import generate_costing_json_from_db
-        
-        result = generate_costing_json_from_db(project_id=None, include_wrapper=False)
-        
+        from budget.models import Projects
+
+        # Resolve project identifier:
+        # - If project_id is None/blank, use latest project (generator handles this)
+        # - If provided, allow either integer primary key or UUID/string project_id
+        resolved_project_pk = None
+        if project_id not in [None, ""]:
+            try:
+                # First, try treating project_id as integer primary key
+                resolved_project = Projects.objects.get(id=int(project_id))
+                resolved_project_pk = resolved_project.id
+            except (ValueError, TypeError, Projects.DoesNotExist):
+                try:
+                    # Fallback: treat project_id as external UUID/string field
+                    resolved_project = Projects.objects.get(project_id=project_id)
+                    resolved_project_pk = resolved_project.id
+                except Projects.DoesNotExist:
+                    logger.error(f"Project not found for identifier: {project_id}")
+                    return None
+
+        result = generate_costing_json_from_db(project_id=resolved_project_pk, include_wrapper=False)
+
         # Handle error cases
         if result.get("status") == "error":
             return None
-            
+
         return result
-        
+
     except Exception as e:
-        logger.error(f"Error getting latest project costing data: {str(e)}")
+        logger.error(f"Error getting project costing data: {str(e)}")
         return None
 
 
@@ -827,7 +859,9 @@ def process_news_alerts_and_call_decision_api(request):
     
     Expected payload:
     {
-        "alert_ids": [1, 2, 3, 4]
+        "alert_ids": [1, 2],
+        "project_id": "uuid",
+        "version_id": "id"
     }
     """
     try:
@@ -840,6 +874,8 @@ def process_news_alerts_and_call_decision_api(request):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         alert_ids = serializer.validated_data['alert_ids']
+        project_id = serializer.validated_data.get('project_id')
+        version_id = serializer.validated_data.get('version_id')
         
         # Fetch alerts by IDs
         alerts = Alert.objects.filter(alert_id__in=alert_ids).order_by('alert_id')
@@ -850,8 +886,8 @@ def process_news_alerts_and_call_decision_api(request):
                 'message': f'No alerts found for IDs: {alert_ids}'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        # Get latest costing data from budget models
-        costing_json = get_latest_project_costing_data()
+        # Get costing data from budget models (optionally for a specific project)
+        costing_json = get_latest_project_costing_data(project_id=project_id)
         
         if not costing_json:
             return Response({
@@ -865,12 +901,29 @@ def process_news_alerts_and_call_decision_api(request):
         # Prepare payload for external API
         external_api_payload = {
             "costing_json": costing_json,
-            "updated_costing_parameter": updated_costing_parameter
+            "updated_costing_parameter": updated_costing_parameter,
+            "project_id": project_id,
+            "version_id": version_id
         }
-        
-        # Call external news-decision-accept API
-        external_api_url =  os.getenv("ML_BASE_URI") + "api/news-decision-accept"
-        
+
+        # Log the exact JSON payload that will be sent to the ML API
+        try:
+            logger.info("ML payload JSON: %s", json.dumps(external_api_payload, ensure_ascii=False))
+        except TypeError as e:
+            # If something inside the payload is not JSON-serializable, log it explicitly
+            logger.error("Error serializing ML payload to JSON: %s", str(e))
+
+        # Optionally pass through project/version identifiers to external API
+        # Cast to string to align with external ML API expectations
+        if project_id is not None:
+            external_api_payload["project_id"] = str(project_id)
+        if version_id is not None:
+            external_api_payload["version_id"] = str(version_id)
+    
+        # Call external news decision API (same base as daily_news_processor)
+        base_uri = os.getenv("ML_BASE_URI", "http://0.0.0.0:8000").rstrip("/")
+        external_api_url = f"{base_uri}/api/news-decision-accept"
+
         try:
             response = requests.post(
                 external_api_url,
